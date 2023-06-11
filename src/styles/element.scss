@@ -1,0 +1,27 @@
+
+
+.el-table .warning-row {
+  --el-table-tr-bg-color: var(--el-color-warning-light-9);
+}
+.el-table .success-row {
+  --el-table-tr-bg-color: var(--el-color-success-light-9);
+}
+
+.el-card {
+  background: #ffffff;
+  --el-card-border-color: #f3f2f1
+}
+
+.el-table {
+  background: #ffffff;
+}
+
+.el-drawer__body {
+  flex: 1;
+  padding: 0;
+  overflow: auto;
+}
+
+.el-select-dropdown__item{
+  user-select: none;
+}

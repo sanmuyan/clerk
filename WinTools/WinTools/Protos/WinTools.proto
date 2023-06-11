@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+
+package WinTools;
+
+message Message {
+  int32 ForegroundWindow = 1;
+  repeated string FileDropList = 2;
+  bool IsPaste = 3;
+  bool Status = 4;
+}
+
+service GrpcServices {
+  rpc Ping(Message)returns(Message);
+  rpc GetForegroundWindow (Message) returns (Message);
+  rpc GetFileDropList(Message) returns(Message);
+  rpc SetFileDropList(Message) returns(Message);
+  rpc SetForegroundWindow(Message) returns(Message);
+}

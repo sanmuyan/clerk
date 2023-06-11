@@ -1,0 +1,12 @@
+{
+  "shortcut_keys": "Ctrl+Right",
+  "max_number": 0,
+  "max_time": 0,
+  "_db_file": "./clerk.db",
+  "enable_win_tools": true,
+  "win_tools_port": 50051,
+  "blur_hide": true,
+  "copy_hide": true,
+  "hide_paste": true,
+  "page_size": 10
+}
