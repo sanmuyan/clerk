@@ -9,7 +9,7 @@
       <el-input
         v-model="inputQuery"
         placeholder="搜索"
-        @input="handelInputChange()"
+        @input="handleInputChange()"
       >
         <template #append>
           <el-select v-model="typeSelect" style="width: 80px">
@@ -29,9 +29,9 @@
           :height="tableHeight"
           :show-header="false"
           :data="tableData"
-          @cell-mouse-enter="handelMouseEnter"
-          @cell-mouse-leave="handelMouseLeave"
-          @row-dblclick="handleCopyHide"
+          @cell-mouse-enter="handleMouseEnter"
+          @cell-mouse-leave="handleMouseLeave"
+          @row-dblclick="handleRowDblclick"
           highlight-current-row
           ref="xClipBoardTableData"
           @current-change="handleCurrentChange"
@@ -41,7 +41,7 @@
             <template #default="{ row }">
               <div>
                 <div v-if="row.type === 'image'" class="image-container">
-                  <img :src="row.content" alt="" :width="row.width" :height="row.height"/>
+                  <img :src="row.content" alt="" height="23"/>
                 </div>
                 <div v-if="row.type === 'text'" class="text-container">
                   {{ row.content }}
@@ -59,7 +59,6 @@
       <content-drawer
         v-model="showDrawer"
         :rowData="nowRowData"
-        @handleCopyHide="handleCopyHide"
         @handleCopy="handleCopy"
         @handleDelete="handleDelete"
       ></content-drawer>
@@ -79,7 +78,6 @@
 <script setup>
 import { ipcRenderer } from 'electron'
 import { getCurrentInstance, onMounted, ref, watch } from 'vue'
-import { deleteData, initDB, listData, queryData } from '@/plugins/sqlite'
 import ContentDrawer from '@/components/ContentDrawer.vue'
 import ContentDetails from '@/components/ContentDetails.vue'
 
@@ -94,7 +92,7 @@ const showDrawer = ref(false)
 const nowRowData = ref({})
 const proxyRef = ref(null)
 const nowCount = ref(0)
-const disableWheel = ref(false)
+const mouseIsTable = ref(false)
 const isEnterControl = ref(false)
 const config = ref({})
 const typeSelect = ref('all')
@@ -134,16 +132,19 @@ const handleResize = () => {
 }
 handleResize()
 
-const handelSetCurrent = (row) => {
+const handleSetCurrent = (row) => {
   if (tableData.value.length > 0 && proxyRef.value.$refs.xClipBoardTableData && row) {
     proxyRef.value.$refs.xClipBoardTableData.setCurrentRow(row)
   }
 }
 
 // 获取数据
-const handelTableData = (data, action) => {
+const handleTableData = (data, action) => {
   totalCount.value = data.count
+  nowCount.value = data.data.length
+  tableData.value = []
   data.data.forEach(item => {
+    item.size = item.content.length
     item.time = new Date(item.timestamp * 1000).toLocaleString('zh-CN', { hour12: false })
     const typeMap = {
       image: '图片',
@@ -153,60 +154,49 @@ const handelTableData = (data, action) => {
     item.width = contentWidth.value
     item.height = 23
     item.desType = typeMap[item.type]
-    tableData.value.push(item)
-    if (item.type === 'image') {
-      const img = new Image()
-      img.src = item.content
-      item.width = img.width
-      img.onload = () => {
-        if (img.height > 23) {
-          item.width = Math.floor(img.width / (img.height / 23))
-        }
-        if (img.height < 23) {
-          item.width = Math.floor(img.width * (23 / img.height))
-        }
-      }
-    }
     if (item.type === 'file') {
       item.fileContentTable = []
       item.fileContent = item.content.replace(/\[/g, '').replace(/]/g, '').replace(/"/g, '').replace(/,/g, ' ')
       item.fileContentArray = JSON.parse(item.content)
     }
+    tableData.value.push(item)
   })
   // 默认选中第一行
   if (tableData.value.length > 0) {
     if (action === 'pre') {
       nowRowData.value = tableData.value[tableData.value.length - 1]
-      handelSetCurrent(nowRowData.value)
+      handleSetCurrent(nowRowData.value)
     } else {
       nowRowData.value = tableData.value[0]
-      handelSetCurrent(nowRowData.value)
+      handleSetCurrent(nowRowData.value)
     }
   }
-  nowCount.value = tableData.value.length
 }
 const getTableData = (action) => {
   switch (action) {
     case 'reset':
-      tableData.value = []
       pageNumber.value = 1
-      break
-    case 'next':
-      tableData.value = []
-      break
-    case 'pre':
+      nowCount.value = 0
+      totalCount.value = 0
       tableData.value = []
       break
   }
-
   if (inputQuery.value) {
-    queryData(pageNumber.value, pageSize.value, inputQuery.value, typeSelect.value).then(res => {
-      handelTableData(res)
+    ipcRenderer.send('message-from-renderer', 'queryData', {
+      pageNumber: pageNumber.value,
+      pageSize: pageSize.value,
+      inputQuery: inputQuery.value,
+      typeSelect: typeSelect.value,
+      action: action
     })
     return
   }
-  listData(pageNumber.value, pageSize.value, typeSelect.value).then(res => {
-    handelTableData(res, action)
+  ipcRenderer.send('message-from-renderer', 'listData', {
+    pageNumber: pageNumber.value,
+    pageSize: pageSize.value,
+    inputQuery: inputQuery.value,
+    typeSelect: typeSelect.value,
+    action: action
   })
 }
 
@@ -217,37 +207,38 @@ const handleDeleteRow = (row) => {
   nowRowData.value = tableData.value[0]
 }
 const handleDelete = (row) => {
-  deleteData(row.id).then(() => {
-    handleDeleteRow(row)
+  ipcRenderer.send('message-from-renderer', 'delete', {
+    id: row.id
   })
+  handleDeleteRow(row)
 }
 
 // 处理拷贝
 const handleCopy = (row) => {
-  ipcRenderer.send('message-from-renderer', 'write', row.content, row.type)
+  ipcRenderer.send('message-from-renderer', 'write', {
+    content: row.content,
+    type: row.type
+  })
 }
 
 const handleCopyHide = (row) => {
   handleCopy(row)
-  if (config.value.user_config.copy_hide) {
-    ipcRenderer.send('message-from-renderer', 'hide', 'triggerPaste')
-  }
+  ipcRenderer.send('message-from-renderer', 'copy')
 }
 
 // 查询框变化
-const handelInputChange = () => {
+const handleInputChange = () => {
   getTableData('reset')
 }
 
 // 处理显示详情
 const handleShowDrawer = () => {
   showDrawer.value = !showDrawer.value
-  disableWheel.value = showDrawer.value
 }
 
 // 鼠标进入事件
-const handelMouseEnter = (row) => {
-  disableWheel.value = false
+const handleMouseEnter = (row) => {
+  mouseIsTable.value = true
   if (!isEnterControl.value) {
     return
   }
@@ -255,8 +246,8 @@ const handelMouseEnter = (row) => {
     nowRowData.value = row
   }
 }
-const handelMouseLeave = (row) => {
-  disableWheel.value = true
+const handleMouseLeave = (row) => {
+  mouseIsTable.value = false
 }
 
 // 获取下一页数据
@@ -276,8 +267,8 @@ const handlePrePageData = () => {
 }
 
 // 滚轮事件
-const handelWheel = (event) => {
-  if (showDrawer.value || disableWheel.value) {
+const handleWheel = (event) => {
+  if (showDrawer.value || !mouseIsTable.value) {
     return
   }
   if (!handleEventLimit(event)) {
@@ -334,7 +325,7 @@ const handleArrowDown = (event, type) => {
     return
   }
   const nextObj = tableData.value[currentIndex + 1]
-  handelSetCurrent(nextObj)
+  handleSetCurrent(nextObj)
 }
 
 // 键盘上箭头处理
@@ -348,7 +339,7 @@ const handleArrowUp = (event, type) => {
     return
   }
   const nextObj = tableData.value[currentIndex - 1]
-  handelSetCurrent(nextObj)
+  handleSetCurrent(nextObj)
 }
 
 const tableRowClassName = (row, rowIndex) => {
@@ -359,7 +350,7 @@ const tableRowClassName = (row, rowIndex) => {
 }
 
 // 处理 ctrl 键
-const handelControl = (event) => {
+const handleControl = (event) => {
   event.ctrlKey ? isEnterControl.value = true : isEnterControl.value = false
 }
 
@@ -375,8 +366,23 @@ const handlePageKey = (event, type) => {
 }
 
 // 处理鼠标右键
-const handelContextmenu = (event) => {
-  handleShowDrawer()
+const handleContextmenu = (event) => {
+  if (mouseIsTable.value) {
+    handleCopy(nowRowData.value)
+  }
+}
+
+// 处理双击键
+const handleRowDblclick = () => {
+  if (mouseIsTable.value && !showDrawer.value) {
+    handleCopyHide(nowRowData.value)
+  }
+}
+
+// 处理回车键
+
+const handleEnter = (event) => {
+  handleCopyHide(nowRowData.value)
 }
 
 // 监听区域 start
@@ -391,7 +397,7 @@ watch(() => typeSelect.value,
 )
 
 // 键盘按下事件
-const handelKeyup = (event) => {
+const handleKeyup = (event) => {
   console.log('key up event: ', event.key)
   switch (event.key) {
     case 'c':
@@ -406,13 +412,13 @@ const handelKeyup = (event) => {
       handleArrowUp(event)
       break
     case 'Enter':
-      handleCopyHide(nowRowData.value)
+      handleEnter()
       break
     case 'Delete':
       handleDelete(nowRowData.value)
       break
     case 'Control':
-      handelControl(event)
+      handleControl(event)
       break
     case 'PageDown':
       handlePageKey(event)
@@ -420,14 +426,18 @@ const handelKeyup = (event) => {
     case 'PageUp':
       handlePageKey(event)
       break
+    case 'ArrowLeft':
+      if (!isEnterControl.value) {
+        handleShowDrawer()
+      }
   }
 }
 
-const handelKeydown = (event) => {
+const handleKeydown = (event) => {
   console.log('key down event: ', event.key)
   switch (event.key) {
     case 'Control':
-      handelControl(event)
+      handleControl(event)
       break
     case 'PageDown':
       handlePageKey(event, 'keyDown')
@@ -447,17 +457,17 @@ const handelKeydown = (event) => {
 // 监听各类事件
 onMounted(() => {
   window.addEventListener('resize', handleResize)
-  // window.addEventListener('scroll', handelScroll)
-  window.addEventListener('wheel', handelWheel)
-  window.addEventListener('keyup', handelKeyup)
-  window.addEventListener('keydown', handelKeydown)
-  window.addEventListener('contextmenu', handelContextmenu)
+  // window.addEventListener('scroll', handleScroll)
+  window.addEventListener('wheel', handleWheel)
+  window.addEventListener('keyup', handleKeyup)
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('contextmenu', handleContextmenu)
   proxyRef.value = getCurrentInstance().proxy
 })
 
 // 监听主进程消息
 ipcRenderer.on('message-from-main', (event, arg, data) => {
-  console.log('message-from-main: ', arg, data)
+  console.log('message-from-main: ', arg)
   switch (arg) {
     case 'newClipboard':
       getTableData('reset')
@@ -470,10 +480,13 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
       config.value = data
       pageSize.value = config.value.user_config.page_size
       tableHeight.value = pageSize.value * 40
-      initDB(data).then(() => {
-        ipcRenderer.send('message-from-renderer', 'initReady')
-        getTableData()
-      })
+      getTableData()
+      break
+    case 'queryData':
+      handleTableData(data.data, data.action)
+      break
+    case 'listData':
+      handleTableData(data.data, data.action)
       break
   }
 })

@@ -8,5 +8,8 @@
   "blur_hide": true,
   "copy_hide": true,
   "hide_paste": true,
-  "page_size": 10
+  "page_size": 10,
+  "enable_text": true,
+  "enable_image": true,
+  "enable_file": true
 }

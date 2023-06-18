@@ -15,7 +15,18 @@ import {
 } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-import { addData, clearWithNumber, clearWithTime, getData, initDB, updateData } from '@/plugins/sqlite'
+import {
+  addData,
+  clearWithNumber,
+  clearWithTime,
+  deleteData,
+  getData,
+  initDB,
+  listData,
+  queryData,
+  updateCollect,
+  updateData
+} from '@/plugins/sqlite'
 import { getUserConfig } from '@/utils/config'
 import { getClient } from '@/plugins/wintools'
 
@@ -33,7 +44,6 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 // 初始化配置
 const userHome = app.getPath('home').replace(/\\/g, '/')
 console.log('userHome', userHome)
-let initReady = false
 let appPath = app.getAppPath().replace(/\\/g, '/').replace('/app.asar', '')
 let resourcesPath = appPath
 if (isDevelopment) {
@@ -78,7 +88,10 @@ try {
       blur_hide: true,
       copy_hide: true,
       hide_paste: true,
-      page_size: 10
+      page_size: 10,
+      enable_text: true,
+      enable_image: true,
+      enable_file: true
     },
     logo_file: resourcesPath + '/logo.png'
   }
@@ -252,7 +265,7 @@ const handleWinPosition = () => {
 }
 
 let foregroundWindow = null
-const handleWinDisplay = (arg) => {
+const handleWinDisplay = (triggerPaste) => {
   if (winShow) {
     console.log('winHide')
     winShow = false
@@ -262,7 +275,7 @@ const handleWinDisplay = (arg) => {
       const msg = {
         ForegroundWindow: foregroundWindow
       }
-      if (arg === 'triggerPaste' && config.user_config.hide_paste) {
+      if (triggerPaste) {
         msg.IsPaste = true
         console.log('triggerPaste', foregroundWindow)
       }
@@ -402,27 +415,29 @@ if (isDevelopment) {
 }
 
 // 监听渲染进程发送的消息
-ipcMain.on('message-from-renderer', (event, arg, content, type) => {
+ipcMain.on('message-from-renderer', (event, arg, data) => {
   switch (arg) {
-    case 'hide':
+    case 'copy':
       if (winShow) {
-        handleWinDisplay(content)
+        if (config.user_config.hide_paste) {
+          handleWinDisplay(true)
+        }
       }
       break
     case 'write':
-      switch (type) {
+      switch (data.type) {
         case 'text':
           console.log('setClipboardText')
-          clipboard.writeText(content)
+          clipboard.writeText(data.content)
           break
         case 'image':
           console.log('setClipboardImage')
-          clipboard.writeImage(nativeImage.createFromDataURL(content))
+          clipboard.writeImage(nativeImage.createFromDataURL(data.content))
           break
         case 'file':
           console.log('setFileDropList')
           if (winToolsReady) {
-            winToolsClient.SetFileDropList({ FileDropList: JSON.parse(content) }, (err, res) => {
+            winToolsClient.SetFileDropList({ FileDropList: JSON.parse(data.content) }, (err, res) => {
               if (err) {
                 console.log('SetFileDropList failed', err)
               }
@@ -430,12 +445,30 @@ ipcMain.on('message-from-renderer', (event, arg, content, type) => {
           }
       }
       break
-    case 'initReady':
-      console.log('渲染进程初始化完成')
-      initReady = true
-      break
     case 'init':
       win.webContents.send('message-from-main', 'init', config)
+      break
+    case 'queryData':
+      queryData(data.pageNumber, data.pageSize, data.inputQuery, data.typeSelect).then(res => {
+        win.webContents.send('message-from-main', 'queryData', {
+          data: res,
+          action: data.action
+        })
+      })
+      break
+    case 'listData':
+      listData(data.pageNumber, data.pageSize, data.typeSelect).then(res => {
+        win.webContents.send('message-from-main', 'listData', {
+          data: res,
+          action: data.action
+        })
+      })
+      break
+    case 'delete':
+      deleteData(data.id).catch()
+      break
+    case 'update':
+      updateCollect(data.id, data.collect).catch()
       break
   }
 })
@@ -485,7 +518,7 @@ const clearPrevious = (type) => {
 const watchText = () => {
   const type = 'text'
   const currentText = clipboard.readText()
-  if (currentText === '' || currentText.trim().length === 0) {
+  if (currentText === '' || currentText.trim().length === 0 || currentText.length > 1048576) {
     return
   }
   if (previousText === currentText) {
@@ -503,7 +536,7 @@ const watchImage = () => {
     return
   }
   const size = image.toBitmap().length
-  if (size === previousImage) {
+  if (size === previousImage || size > 104857600) {
     return
   }
 
@@ -548,19 +581,20 @@ const watchFile = () => {
 }
 
 const startWatch = (interval) => {
-  const waiting = setInterval(() => {
-    if (initReady) {
-      clearInterval(waiting)
-      const si = setInterval(() => {
-        if (exiting) {
-          clearInterval(si)
-        }
-        watchFile()
-        watchText()
-        watchImage()
-      }, interval)
+  const si = setInterval(() => {
+    if (exiting) {
+      clearInterval(si)
     }
-  }, 100)
+    if (config.user_config.enable_text) {
+      watchText()
+    }
+    if (config.user_config.enable_image) {
+      watchImage()
+    }
+    if (config.user_config.enable_file) {
+      watchFile()
+    }
+  }, interval)
 }
 
 // 启动时清理历史数据

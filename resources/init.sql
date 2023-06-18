@@ -3,13 +3,23 @@ CREATE TABLE "clerk" (
   "content" TEXT NOT NULL,
   "type" TEXT NOT NULL,
   "timestamp" integer NOT NULL,
-  "collect" TEXT
+  "collect" TEXT,
+  CONSTRAINT "content" UNIQUE ("type" ASC, "content" ASC)
 );
 
-CREATE UNIQUE INDEX "data_index"
+CREATE INDEX "collect"
 ON "clerk" (
-  "content" ASC,
-  "type" ASC,
-  "timestamp" DESC,
   "collect" ASC
+);
+CREATE INDEX "content"
+ON "clerk" (
+  "content" ASC
+);
+CREATE INDEX "timestamp"
+ON "clerk" (
+  "timestamp" DESC
+);
+CREATE INDEX "type"
+ON "clerk" (
+  "type" ASC
 );

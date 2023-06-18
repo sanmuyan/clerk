@@ -16,6 +16,7 @@
     "@element-plus/icons-vue": "^2.1.0",
     "@grpc/grpc-js": "^1.8.14",
     "@grpc/proto-loader": "^0.7.7",
+    "@highlightjs/vue-plugin": "^2.1.0",
     "core-js": "^3.8.3",
     "element-plus": "^2.3.4",
     "highlight.js": "^11.7.0",

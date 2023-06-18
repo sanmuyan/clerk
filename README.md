@@ -29,13 +29,14 @@
 
 ### 复制条目
 
-- 双击条目
+- 选中条目后双击条目
 - Enter键
 - Ctrl+c键
+- 鼠标右键
 
 ### 单条模式
 
-- 鼠标右击
+- 键盘左键头
 
 ### 删除条目
 
@@ -72,7 +73,10 @@ yarn run electron:build
   "blur_hide": true,
   "copy_hide": true,
   "hide_paste": true,
-  "page_size": 10
+  "page_size": 10,
+  "enable_text": true,
+  "enable_image": true,
+  "enable_file": true
 }
 ```
 
@@ -86,6 +90,9 @@ yarn run electron:build
 - `copy_hide` 是否允许复制后最小化
 - `hide_paste` 复制并最小化后是否自动粘贴
 - `page_size` 分页大小
+- `enable_text` 是否支持文本
+- `enable_image` 是否支持图片
+- `enable_file` 是否支持文件
 
 安装成功后配置文件在 `USER_HOME./clerk/config.json` 也可以在启动的时候 `--config=xxx` 指定配置文件路径  
 数据文件在 `USER_HOME./clerk.db`

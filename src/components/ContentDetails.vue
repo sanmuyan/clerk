@@ -4,8 +4,10 @@
           <span>
             {{ rowData.desType }} {{ rowData.time }}
             <el-button @click="handleCopy" round :icon="CopyDocument" size="small"></el-button>
-            <el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning" size="small"></el-button>
-            <el-button v-if="rowData.collect !== 'y'" @click="handleCollect" round :icon="Star" type="default" size="small"></el-button>
+            <el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
+                       size="small"></el-button>
+            <el-button v-else @click="handleCollect" round :icon="Star" type="default"
+                       size="small"></el-button>
             <el-button @click="handleDelete" round :icon="Delete" size="small"></el-button>
           </span>
     </template>
@@ -13,10 +15,9 @@
       <el-container class="content-container">
         <el-scrollbar>
           <el-container>
-            <div v-if="rowData.type === 'text'" v-highlight>
-              <pre>
-                <code>{{ rowData.content }}</code>
-              </pre>
+            <div v-if="rowData.type === 'text'">
+              <highlightjs v-if="rowData.size < 10240" autodetect :code="rowData.content"/>
+              <span v-else> {{ rowData.content }}</span>
             </div>
             <div v-if="rowData.type === 'image'">
               <img :src="rowData.content" alt=""/>
@@ -36,7 +37,7 @@
 <script setup>
 import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { CopyDocument, Delete, Star } from '@element-plus/icons-vue'
-import { updateCollect } from '@/plugins/sqlite'
+import { ipcRenderer } from 'electron'
 
 const contentHeight = ref('100px')
 
@@ -65,14 +66,16 @@ const handleDelete = () => {
 
 const handleCollect = () => {
   const row = props.rowData
-  if (props.rowData.collect === 'y') {
+  if (row.collect === 'y') {
     row.collect = 'n'
-    updateCollect(props.rowData.id, 'n')
   } else {
     row.collect = 'y'
-    updateCollect(props.rowData.id, 'y')
   }
   emit('update:rowData', row)
+  ipcRenderer.send('message-from-renderer', 'update', {
+    id: row.id,
+    collect: row.collect
+  })
 }
 
 const handleResize = () => {
