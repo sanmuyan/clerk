@@ -10,6 +10,8 @@
         v-model="inputQuery"
         placeholder="搜索"
         @input="handleInputChange()"
+        @blur="handleInputBlur()"
+        @focus="handleInputFocus()"
       >
         <template #append>
           <el-select v-model="typeSelect" style="width: 80px">
@@ -89,6 +91,7 @@ const pageSize = ref(10)
 const tableHeight = ref(400)
 const totalCount = ref(0)
 const showDrawer = ref(false)
+const disableShowDrawer = ref(false)
 const nowRowData = ref({})
 const proxyRef = ref(null)
 const nowCount = ref(0)
@@ -233,7 +236,21 @@ const handleInputChange = () => {
 
 // 处理显示详情
 const handleShowDrawer = () => {
+  if (disableShowDrawer.value) {
+    showDrawer.value = false
+    return
+  }
   showDrawer.value = !showDrawer.value
+}
+
+// 搜索聚焦事件
+const handleInputFocus = () => {
+  disableShowDrawer.value = true
+}
+
+// 搜索失焦事件
+const handleInputBlur = () => {
+  disableShowDrawer.value = false
 }
 
 // 鼠标进入事件
