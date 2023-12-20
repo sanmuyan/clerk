@@ -98,16 +98,12 @@ const nowCount = ref(0)
 const mouseIsTable = ref(false)
 const isEnterControl = ref(false)
 const config = ref({})
-const typeSelect = ref('all')
+const typeSelect = ref('text')
 
 ipcRenderer.send('message-from-renderer', 'init')
 
 // 选择器
 const typeSelectOptions = ref([
-  {
-    label: '全部',
-    value: 'all'
-  },
   {
     label: '文本',
     value: 'text'
@@ -123,6 +119,10 @@ const typeSelectOptions = ref([
   {
     label: '收藏',
     value: 'collect'
+  },
+  {
+    label: '全部',
+    value: 'all'
   }
 ])
 
