@@ -4,6 +4,7 @@ CREATE TABLE "clerk" (
   "type" TEXT NOT NULL,
   "timestamp" integer NOT NULL,
   "collect" TEXT,
+  "remarks" TEXT,
   CONSTRAINT "content" UNIQUE ("type" ASC, "content" ASC)
 );
 

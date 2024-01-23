@@ -63,12 +63,14 @@
         :rowData="nowRowData"
         @handleCopy="handleCopy"
         @handleDelete="handleDelete"
+        @handleFull="handleShowDrawer"
       ></content-drawer>
     </div>
     <div class="content-details">
       <content-details
         @handleCopy="handleCopy"
         @handleDelete="handleDelete"
+        @handleFull="handleShowDrawer"
         :rowData="nowRowData"
         detailsType="main"
       >
@@ -443,10 +445,10 @@ const handleKeyup = (event) => {
     case 'PageUp':
       handlePageKey(event)
       break
-    case 'ArrowLeft':
-      if (!isEnterControl.value) {
-        handleShowDrawer()
-      }
+    // case 'ArrowLeft':
+    //   if (!isEnterControl.value) {
+    //     handleShowDrawer()
+    //   }
   }
 }
 

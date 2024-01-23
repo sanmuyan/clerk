@@ -176,3 +176,14 @@ export const updateCollect = (id, collect) => {
     })
   })
 }
+
+export const updateRemarks = (id, remarks) => {
+  return new Promise((resolve, reject) => {
+    db.run('UPDATE clerk SET "remarks" = ? WHERE id = ?', [remarks, id], (err) => {
+      if (err) {
+        reject(err)
+      }
+      resolve()
+    })
+  })
+}

@@ -14,6 +14,7 @@
     <content-details
       @handleCopy="handleCopy"
       @handleDelete="handleDelete"
+      @handleFull="handleFull"
       :row-data="rowData"
       detailsType="drawer"
     >
@@ -51,6 +52,10 @@ const handleCopyHide = () => {
 
 const handleDelete = () => {
   emit('handleDelete', props.rowData)
+}
+
+const handleFull = () => {
+  emit('handleFull', props.rowData)
 }
 
 </script>

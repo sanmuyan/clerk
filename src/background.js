@@ -25,7 +25,8 @@ import {
   listData,
   queryData,
   updateCollect,
-  updateData
+  updateData,
+  updateRemarks
 } from '@/plugins/sqlite'
 import { getUserConfig } from '@/utils/config'
 import { getClient } from '@/plugins/wintools'
@@ -467,8 +468,11 @@ ipcMain.on('message-from-renderer', (event, arg, data) => {
     case 'delete':
       deleteData(data.id).catch()
       break
-    case 'update':
+    case 'updateCollect':
       updateCollect(data.id, data.collect).catch()
+      break
+    case 'updateRemarks':
+      updateRemarks(data.id, data.remarks).catch()
       break
   }
 })
