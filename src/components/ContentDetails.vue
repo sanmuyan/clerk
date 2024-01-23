@@ -2,20 +2,18 @@
   <el-card class="card-container">
     <template #header>
           <span style="display: block">
-            <el-button @click="handleCopy" round :icon="CopyDocument" size="small"></el-button>
-            <el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
+            <el-tooltip placement="top" effect="dark">
+                 <template #content>
+                   <span>{{ rowData.desType }} {{ rowData.time }}</span>
+                   <br/>
+                   <span v-if="rowData.remarks">备注: {{ rowData.remarks }}</span>
+                 </template>
+                 <el-button @click="handleCopy" round :icon="CopyDocument" size="small"></el-button>
+            </el-tooltip><el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
                        size="small"></el-button>
             <el-button v-else @click="handleCollect" round :icon="Star" type="default"
                        size="small"></el-button>
-            <el-tooltip placement="top" effect="dark">
-                 <template #content>
-                    <span>{{ rowData.desType }} {{ rowData.time }}</span>
-                    <br/>
-                    <span v-if="rowData.remarks">备注: {{ rowData.remarks }}</span>
-                 </template>
-                <el-button @click="handleRemarks" round :icon="Edit" size="small">
-            </el-button>
-            </el-tooltip>
+            <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
             <el-button @click="handleDelete" round :icon="Delete" size="small"></el-button>
             <el-button @click="handleFull" round :icon="FullScreen" size="small"></el-button>
           </span>
