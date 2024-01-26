@@ -20,13 +20,14 @@ import {
   clearWithNumber,
   clearWithTime,
   deleteData,
-  getData,
+  getContentWithContent,
   initDB,
   listData,
   queryData,
   updateCollect,
-  updateData,
-  updateRemarks
+  updateRemarks,
+  updateTimestamp,
+  vacuumDB
 } from '@/plugins/sqlite'
 import { getUserConfig } from '@/utils/config'
 import { getClient } from '@/plugins/wintools'
@@ -481,9 +482,9 @@ ipcMain.on('message-from-renderer', (event, arg, data) => {
 const handleClipboard = (current, type) => {
   console.log('clipboard update', type)
   const timestamp = Math.floor(Date.now() / 1000)
-  getData(current, type).then(async (res) => {
+  getContentWithContent(current, type).then(async (res) => {
     if (res) {
-      await updateData(res.id, timestamp)
+      await updateTimestamp(res.clerk_id, timestamp)
     } else {
       await addData(current, timestamp, type)
     }
@@ -602,10 +603,10 @@ const startWatch = (interval) => {
 }
 
 // 启动时清理历史数据
-const clearHistoryData = () => {
+const clearHistoryData = async () => {
   if (config.user_config.max_time > 0) {
     const timestamp = Math.floor(Date.now() / 1000)
-    clearWithTime(timestamp - config.user_config.max_time).then((err, res) => {
+    await clearWithTime(timestamp - config.user_config.max_time).then((err) => {
       if (err) {
         console.log(err)
       }
@@ -613,15 +614,21 @@ const clearHistoryData = () => {
   }
   if (config.user_config.max_number > 0) {
     console.log('clearWithNumber')
-    clearWithNumber(config.user_config.max_number).then((err, res) => {
+    await clearWithNumber(config.user_config.max_number).then((err) => {
       if (err) {
         console.log(err)
       }
     })
   }
+
+  await vacuumDB().then((err) => {
+    if (err) {
+      console.log(err)
+    }
+  })
 }
 
 const start = () => {
+  clearHistoryData().then()
   startWatch(500)
-  clearHistoryData()
 }
