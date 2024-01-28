@@ -11,3 +11,5 @@ export const DB_CONTENT_COLUMN_MAP = {
   text: 'text_content',
   file: 'text_content'
 }
+
+export const DB_IMAGE_CHECKSUMS_COLUMN = 'image_checksums'

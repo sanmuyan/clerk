@@ -38,7 +38,8 @@ ON "clerk_text" (
 
 CREATE TABLE "clerk_image" (
   "clerk_id" INTEGER NOT NULL,
-  "image_content" TEXT NOT NULL,
+  "image_content" blob NOT NULL,
+  "image_checksums" TEXT NOT NULL,
   PRIMARY KEY ("clerk_id"),
   CONSTRAINT "clerk_image_content" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 );

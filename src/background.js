@@ -17,10 +17,12 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import {
   addData,
+  addImageData,
   clearWithNumber,
   clearWithTime,
   deleteData,
   getContentWithContent,
+  getImageChecksumsWithChecksums,
   initDB,
   listData,
   queryData,
@@ -31,6 +33,7 @@ import {
 } from '@/plugins/sqlite'
 import { getUserConfig } from '@/utils/config'
 import { getClient } from '@/plugins/wintools'
+import crypto from 'crypto'
 
 const fs = require('fs')
 const { spawn } = require('child_process')
@@ -492,9 +495,22 @@ const handleClipboard = (current, type) => {
   })
 }
 
+const handleImageClipboard = (current, type, imageChecksums) => {
+  console.log('clipboard update', type)
+  const timestamp = Math.floor(Date.now() / 1000)
+  getImageChecksumsWithChecksums(imageChecksums, type).then(async (res) => {
+    if (res) {
+      await updateTimestamp(res.clerk_id, timestamp)
+    } else {
+      await addImageData(current, timestamp, type, imageChecksums)
+    }
+    win.webContents.send('message-from-main', 'newClipboard')
+  })
+}
+
 let previousText = null
 let previousFile = null
-let previousImage = null
+let previousImageChecksums = null
 let fileDropList = []
 
 const clearPrevious = (type) => {
@@ -504,11 +520,11 @@ const clearPrevious = (type) => {
         previousText = null
       }
       if (clipboard.readImage().isEmpty()) {
-        previousImage = null
+        previousImageChecksums = null
       }
       break
     case 'text':
-      previousImage = null
+      previousImageChecksums = null
       previousFile = null
       break
     case 'image':
@@ -523,6 +539,7 @@ const clearPrevious = (type) => {
 const watchText = () => {
   const type = 'text'
   const currentText = clipboard.readText()
+  // 文本不能超过1MB
   if (currentText === '' || currentText.trim().length === 0 || currentText.length > 1048576) {
     return
   }
@@ -540,18 +557,20 @@ const watchImage = () => {
   if (image.isEmpty()) {
     return
   }
-  const size = image.toBitmap().length
-  if (size === previousImage || size > 104857600) {
+  const imageContent = image.toPNG()
+  const md5 = crypto.createHash('md5')
+  md5.update(imageContent)
+  const currentImageChecksums = md5.digest('hex')
+  // 图片不能大于10MB
+  if (imageContent.length > 10485760) {
     return
   }
 
-  const currentImage = image.toDataURL()
-
-  if (currentImage === previousImage) {
+  if (currentImageChecksums === previousImageChecksums) {
     return
   }
-  previousImage = size
-  handleClipboard(currentImage, type)
+  previousImageChecksums = currentImageChecksums
+  handleImageClipboard(imageContent, type, currentImageChecksums)
   clearPrevious(type)
 }
 const watchFile = () => {
