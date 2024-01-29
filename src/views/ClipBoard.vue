@@ -150,7 +150,8 @@ const handleTableData = (data, action) => {
   tableData.value = []
   data.data.forEach(item => {
     item.size = item.content.length
-    item.time = new Date(item.timestamp * 1000).toLocaleString('zh-CN', { hour12: false })
+    item.create_time = new Date(item.create_time * 1000).toLocaleString('zh-CN', { hour12: false })
+    item.update_time = new Date(item.update_time * 1000).toLocaleString('zh-CN', { hour12: false })
     const typeMap = {
       image: '图片',
       text: '文本',
@@ -208,7 +209,6 @@ const getTableData = (action) => {
 // 删除数据
 const handleDeleteRow = (row) => {
   tableData.value = tableData.value.filter(item => item.id !== row.id)
-  getTableData('reset')
   nowRowData.value = tableData.value[0]
 }
 const handleDelete = (row) => {
@@ -228,7 +228,7 @@ const handleCopy = (row) => {
 
 const handleCopyHide = (row) => {
   handleCopy(row)
-  ipcRenderer.send('message-from-renderer', 'copy')
+  ipcRenderer.send('message-from-renderer', 'hide_paste')
 }
 
 // 查询框变化
@@ -492,7 +492,7 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
       getTableData('reset')
       break
     case 'reset':
-      inputQuery.value = null
+      // inputQuery.value = null
       getTableData('reset')
       break
     case 'init':

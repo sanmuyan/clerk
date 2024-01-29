@@ -28,7 +28,7 @@ import {
   queryData,
   updateCollect,
   updateRemarks,
-  updateTimestamp,
+  updateUpdateTime,
   vacuumDB
 } from '@/plugins/sqlite'
 import { getUserConfig } from '@/utils/config'
@@ -422,7 +422,7 @@ if (isDevelopment) {
 // 监听渲染进程发送的消息
 ipcMain.on('message-from-renderer', (event, arg, data) => {
   switch (arg) {
-    case 'copy':
+    case 'hide_paste':
       if (winShow) {
         if (config.user_config.hide_paste) {
           handleWinDisplay(true)
@@ -470,13 +470,19 @@ ipcMain.on('message-from-renderer', (event, arg, data) => {
       })
       break
     case 'delete':
-      deleteData(data.id).catch()
+      deleteData(data.id).then(() => {
+        win.webContents.send('message-from-main', 'reset')
+      })
       break
     case 'updateCollect':
-      updateCollect(data.id, data.collect).catch()
+      updateCollect(data.id, data.collect).then(() => {
+        win.webContents.send('message-from-main', 'reset')
+      })
       break
     case 'updateRemarks':
-      updateRemarks(data.id, data.remarks).catch()
+      updateRemarks(data.id, data.remarks).then(() => {
+        win.webContents.send('message-from-main', 'reset')
+      })
       break
   }
 })
@@ -487,9 +493,9 @@ const handleClipboard = (current, type) => {
   const timestamp = Math.floor(Date.now() / 1000)
   getContentWithContent(current, type).then(async (res) => {
     if (res) {
-      await updateTimestamp(res.clerk_id, timestamp)
+      await updateUpdateTime(res.clerk_id, timestamp)
     } else {
-      await addData(current, timestamp, type)
+      await addData(current, type)
     }
     win.webContents.send('message-from-main', 'newClipboard')
   })
@@ -497,12 +503,11 @@ const handleClipboard = (current, type) => {
 
 const handleImageClipboard = (current, type, imageChecksums) => {
   console.log('clipboard update', type)
-  const timestamp = Math.floor(Date.now() / 1000)
   getImageChecksumsWithChecksums(imageChecksums, type).then(async (res) => {
     if (res) {
-      await updateTimestamp(res.clerk_id, timestamp)
+      await updateUpdateTime(res.clerk_id)
     } else {
-      await addImageData(current, timestamp, type, imageChecksums)
+      await addImageData(current, type, imageChecksums)
     }
     win.webContents.send('message-from-main', 'newClipboard')
   })

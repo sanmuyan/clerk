@@ -55,7 +55,7 @@ const handleDelete = () => {
 }
 
 const handleFull = () => {
-  emit('handleFull', props.rowData)
+  emit('handleFull')
 }
 
 </script>

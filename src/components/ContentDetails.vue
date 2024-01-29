@@ -4,12 +4,17 @@
           <span style="display: block">
             <el-tooltip placement="top" effect="dark">
                  <template #content>
-                   <span>{{ rowData.desType }} {{ rowData.time }}</span>
+                   <span>类型：{{ rowData.desType }} </span>
                    <br/>
-                   <span v-if="rowData.remarks">备注: {{ rowData.remarks }}</span>
+                   <span>创建：{{ rowData.create_time }} </span>
+                   <br/>
+                   <span>更新：{{ rowData.update_time }} </span>
+                   <br/>
+                   <span v-if="rowData.remarks">备注： {{ rowData.remarks }}</span>
                  </template>
                  <el-button @click="handleCopy" round :icon="CopyDocument" size="small"></el-button>
-            </el-tooltip><el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
+            </el-tooltip>
+            <el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
                        size="small"></el-button>
             <el-button v-else @click="handleCollect" round :icon="Star" type="default"
                        size="small"></el-button>

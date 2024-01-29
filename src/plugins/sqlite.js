@@ -92,9 +92,10 @@ export const getContentWithContent = (content, type) => {
   })
 }
 
-export const addImageData = (content, timestamp, type, imageChecksums) => {
+export const addImageData = (content, type, imageChecksums) => {
+  const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(timestamp,type) VALUES (?,?)`, [timestamp, type], (err) => {
+    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type) VALUES (?,?,?)`, [timestamp, timestamp, type], (err) => {
       if (err) {
         reject(err)
       }
@@ -112,9 +113,10 @@ export const addImageData = (content, timestamp, type, imageChecksums) => {
     })
   })
 }
-export const addData = (content, timestamp, type) => {
+export const addData = (content, type) => {
+  const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(timestamp,type) VALUES (?,?)`, [timestamp, type], (err) => {
+    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type) VALUES (?,?,?)`, [timestamp, timestamp, type], (err) => {
       if (err) {
         reject(err)
       }
@@ -133,9 +135,10 @@ export const addData = (content, timestamp, type) => {
   })
 }
 
-export const updateTimestamp = (id, timestamp) => {
+export const updateUpdateTime = (id) => {
+  const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET timestamp = ? WHERE id = ?`, [timestamp, id], (err) => {
+    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET update_time = ? WHERE id = ?`, [timestamp, id], (err) => {
       if (err) {
         reject(err)
       }
@@ -146,7 +149,7 @@ export const updateTimestamp = (id, timestamp) => {
 
 const listDataWithSql = (sql, countSql, page) => {
   return new Promise((resolve, reject) => {
-    db.all(`${sql} ORDER BY timestamp DESC LIMIT ? OFFSET ?`, [page.limit, page.offset], async (err, rows) => {
+    db.all(`${sql} ORDER BY update_time DESC LIMIT ? OFFSET ?`, [page.limit, page.offset], async (err, rows) => {
       if (err) {
         reject(err)
       }
@@ -220,7 +223,7 @@ export const deleteData = (id) => {
 
 export const clearWithTime = (minTimestamp) => {
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect != NULL) AND timestamp < ?`, [minTimestamp], (err) => {
+    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect != NULL) AND update_time < ?`, [minTimestamp], (err) => {
       if (err) {
         reject(err)
       }
@@ -231,7 +234,7 @@ export const clearWithTime = (minTimestamp) => {
 
 export const clearWithNumber = (maxNumber) => {
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect IS NULL) ORDER BY timestamp DESC LIMIT -1 OFFSET ?)`, [maxNumber], (err) => {
+    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect IS NULL) ORDER BY update_time DESC LIMIT -1 OFFSET ?)`, [maxNumber], (err) => {
       if (err) {
         reject(err)
       }
@@ -242,6 +245,9 @@ export const clearWithNumber = (maxNumber) => {
 
 export const updateCollect = (id, collect) => {
   return new Promise((resolve, reject) => {
+    updateUpdateTime(id).then().catch(err => {
+      reject(err)
+    })
     db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET collect = ? WHERE id = ?`, [collect, id], (err) => {
       if (err) {
         reject(err)
@@ -253,6 +259,9 @@ export const updateCollect = (id, collect) => {
 
 export const updateRemarks = (id, remarks) => {
   return new Promise((resolve, reject) => {
+    updateUpdateTime(id).then().catch(err => {
+      reject(err)
+    })
     db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET remarks = ? WHERE id = ?`, [remarks, id], (err) => {
       if (err) {
         reject(err)
