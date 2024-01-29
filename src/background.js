@@ -18,6 +18,7 @@ import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import {
   addData,
   addImageData,
+  clearMarkedDelete,
   clearWithNumber,
   clearWithTime,
   deleteData,
@@ -644,6 +645,12 @@ const clearHistoryData = async () => {
       }
     })
   }
+
+  await clearMarkedDelete().then((err) => {
+    if (err) {
+      console.log(err)
+    }
+  })
 
   await vacuumDB().then((err) => {
     if (err) {

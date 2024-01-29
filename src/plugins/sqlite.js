@@ -95,7 +95,7 @@ export const getContentWithContent = (content, type) => {
 export const addImageData = (content, type, imageChecksums) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type) VALUES (?,?,?)`, [timestamp, timestamp, type], (err) => {
+    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks) VALUES (?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', ''], (err) => {
       if (err) {
         reject(err)
       }
@@ -116,7 +116,7 @@ export const addImageData = (content, type, imageChecksums) => {
 export const addData = (content, type) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type) VALUES (?,?,?)`, [timestamp, timestamp, type], (err) => {
+    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks) VALUES (?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', ''], (err) => {
       if (err) {
         reject(err)
       }
@@ -173,18 +173,18 @@ const listDataWithSql = (sql, countSql, page) => {
 }
 export const listData = (pageNumber, pageSize, typeSelect) => {
   const page = getPaginator(pageNumber, pageSize)
-  let sql = `SELECT * FROM ${DB_MAIN_TABLE_NAME}`
-  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME}`
+  let sql = `SELECT * FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete != 'y'`
+  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete != 'y'`
   switch (typeSelect) {
     case 'all':
       break
     case 'collect':
-      sql = `${sql} WHERE collect = 'y'`
-      countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} WHERE collect = 'y'`
+      sql = `${sql} AND collect = 'y'`
+      countSql = `${countSql} AND collect = 'y'`
       break
     default:
-      sql = `${sql} WHERE type = '${typeSelect}'`
-      countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} WHERE type = '${typeSelect}'`
+      sql = `${sql} AND type = '${typeSelect}'`
+      countSql = `${countSql} AND type = '${typeSelect}'`
       break
   }
   console.log('listSql', sql)
@@ -192,8 +192,8 @@ export const listData = (pageNumber, pageSize, typeSelect) => {
 }
 export const queryData = (pageNumber, pageSize, content, typeSelect) => {
   const page = getPaginator(pageNumber, pageSize)
-  let sql = `SELECT ${DB_MAIN_TABLE_NAME}.* FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id  LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
-  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id  LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
+  let sql = `SELECT ${DB_MAIN_TABLE_NAME}.* FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id  LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE is_delete != 'y' AND (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
+  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id  LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE is_delete != 'y' AND (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
   switch (typeSelect) {
     case 'all':
       break
@@ -212,7 +212,22 @@ export const queryData = (pageNumber, pageSize, content, typeSelect) => {
 
 export const deleteData = (id) => {
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE id = ?`, [id], (err) => {
+    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y' WHERE id = ?`, [id], (err) => {
+      if (err) {
+        reject(err)
+      }
+      updateUpdateTime(id).then().catch(err => {
+        reject(err)
+      })
+      resolve()
+    })
+  })
+}
+
+export const clearWithTime = (minTimestamp) => {
+  const timestamp = Math.floor(Date.now() / 1000)
+  return new Promise((resolve, reject) => {
+    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ? WHERE (collect != 'y' AND is_delete != 'y') AND update_time < ?`, [timestamp, minTimestamp], (err) => {
       if (err) {
         reject(err)
       }
@@ -221,9 +236,11 @@ export const deleteData = (id) => {
   })
 }
 
-export const clearWithTime = (minTimestamp) => {
+export const clearMarkedDelete = () => {
+  const periodTime = 60 * 60 * 24 * 30
+  const timestamp = Math.floor(Date.now() / 1000) - periodTime
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect != NULL) AND update_time < ?`, [minTimestamp], (err) => {
+    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete = 'y' AND update_time < ?`, [timestamp], (err) => {
       if (err) {
         reject(err)
       }
@@ -233,8 +250,9 @@ export const clearWithTime = (minTimestamp) => {
 }
 
 export const clearWithNumber = (maxNumber) => {
+  const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' OR collect IS NULL) ORDER BY update_time DESC LIMIT -1 OFFSET ?)`, [maxNumber], (err) => {
+    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ? WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' AND is_delete != 'y') ORDER BY update_time DESC LIMIT -1 OFFSET ?)`, [timestamp, maxNumber], (err) => {
       if (err) {
         reject(err)
       }
