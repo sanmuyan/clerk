@@ -1,3 +1,5 @@
+import { logger } from '@/plugins/logger'
+
 const fs = require('fs')
 
 export const getUserConfig = (config) => {
@@ -11,7 +13,7 @@ export const getUserConfig = (config) => {
   } else {
     configFile = config.user_config_path + '/config.json'
     if (!fs.existsSync(configFile)) {
-      console.error('配置文件不存在, 将使用默认配置文件')
+      logger.warn('配置文件不存在, 将使用默认配置文件')
       fs.copyFileSync(config.resources_path + '/config-example.json', configFile)
     }
   }

@@ -1,7 +1,8 @@
 import { screen } from 'electron'
-import { config } from '@/services/config'
+import { config } from '@/plugins/config'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
 import { win } from '@/services/win'
+import { logger } from '@/plugins/logger'
 
 export let winShow = false
 export const handleWinPosition = () => {
@@ -35,30 +36,30 @@ export const handleWinPosition = () => {
 let foregroundWindow = null
 export const handleWinDisplay = (triggerPaste) => {
   if (winShow) {
-    console.log('winHide')
+    logger.debug('winHide')
     winShow = false
     win.hide()
     if (winToolsReady) {
-      console.log('setForegroundWindow', foregroundWindow)
+      logger.debug(`setForegroundWindow: ${foregroundWindow}`)
       const msg = {
         ForegroundWindow: foregroundWindow
       }
       if (triggerPaste) {
         msg.IsPaste = true
-        console.log('triggerPaste', foregroundWindow)
+        logger.debug(`triggerPaste: ${foregroundWindow}`)
       }
       winToolsClient.SetForegroundWindow(msg, (err, res) => {
         if (err) {
-          console.log('SetForegroundWindow failed', err)
+          logger.error(`setForegroundWindow failed: ${err}`)
         } else {
           if (!res.Status) {
-            console.log('SetForegroundWindow not true')
+            logger.warn('setForegroundWindow not true')
             winToolsClient.SetForegroundWindow(msg, (err, res) => {
               if (err) {
-                console.log('SetForegroundWindow failed', err)
+                logger.error(`setForegroundWindow failed: ${err}`)
               } else {
                 if (!res.Status) {
-                  console.log('SetForegroundWindow not true again')
+                  logger.warn('setForegroundWindow not true again')
                 }
               }
             })
@@ -68,16 +69,16 @@ export const handleWinDisplay = (triggerPaste) => {
     }
     win.webContents.send('message-from-main', 'reset')
   } else {
-    console.log('winShow')
+    logger.debug('winShow')
     winShow = true
     handleWinPosition()
     if (winToolsReady) {
       winToolsClient.GetForegroundWindow({}, (err, res) => {
         if (err) {
-          console.log('GetForegroundWindow failed', err)
+          logger.error(`getForegroundWindow failed: ${err}`)
         } else {
           foregroundWindow = res.ForegroundWindow
-          console.log('foregroundWindow', foregroundWindow)
+          logger.debug(`setForegroundWindow: ${foregroundWindow}`)
         }
         win.show()
       })

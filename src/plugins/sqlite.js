@@ -1,11 +1,7 @@
 import sqlite3 from 'sqlite3'
 import { getPaginator } from '@/utils/paginator'
-import {
-  DB_CONTENT_COLUMN_MAP,
-  DB_CONTENT_TABLE_NAME_MAP,
-  DB_IMAGE_CHECKSUMS_COLUMN,
-  DB_MAIN_TABLE_NAME
-} from '@/constant'
+import { DB_CONTENT_COLUMN_MAP, DB_CONTENT_TABLE_NAME_MAP, DB_MAIN_TABLE_NAME } from '@/constant'
+import { logger } from '@/plugins/logger'
 
 const sqlite = sqlite3.verbose()
 let db = null
@@ -14,25 +10,29 @@ export const initDB = (config) => {
   db = new sqlite.Database(config.user_config.db_file)
 
   return new Promise((resolve, reject) => {
-    db.get(`SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME}`, (err, res) => {
+    const checkSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME}`
+    logger.debug(`initDBCheckSQL: ${checkSql}`)
+    let msg = ''
+    db.get(checkSql, (err, res) => {
       if (err) {
         db.exec(config.init_sql, (err) => {
           if (err) {
-            console.log(err)
             reject(err)
           } else {
-            console.log('数据库初始化成功')
+            msg = '数据库初始化成功'
           }
         })
       } else {
-        console.log('数据库连接成功', res)
+        msg = '数据库连接成功'
       }
-      resolve()
-      db.run('PRAGMA foreign_keys = ON', (err) => {
+      const foreignKeysSql = 'PRAGMA foreign_keys = ON'
+      logger.debug(`initDBForeignKeysSQL: ${foreignKeysSql}`)
+      db.get(foreignKeysSql, (err, res) => {
         if (err) {
           reject(err)
         }
       })
+      resolve(msg)
     })
   })
 }
@@ -50,7 +50,9 @@ const getCount = (sql) => {
 
 const getContentWithRow = (row) => {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${DB_CONTENT_TABLE_NAME_MAP[row.type]} WHERE clerk_id = ?`, [row.id], (err, res) => {
+    const sql = `SELECT * FROM ${DB_CONTENT_TABLE_NAME_MAP[row.type]} WHERE clerk_id = ${row.id}`
+    logger.debug(`getContentWithRowSQL: ${sql}`)
+    db.get(sql, (err, res) => {
       if (err) {
         reject(err)
       }
@@ -67,20 +69,11 @@ const getContentWithRow = (row) => {
   })
 }
 
-export const getImageChecksumsWithChecksums = (imageChecksums, type) => {
-  return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${DB_CONTENT_TABLE_NAME_MAP[type]} WHERE "${DB_IMAGE_CHECKSUMS_COLUMN}" = ?`, [imageChecksums], (err, res) => {
-      if (err) {
-        reject(err)
-      }
-      resolve(res)
-    })
-  })
-}
-
 export const getClipboardWithHash = (hash, type) => {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE hash = ?`, [hash], (err, res) => {
+    const sql = `SELECT id,is_delete FROM ${DB_MAIN_TABLE_NAME} WHERE hash = '${hash}'`
+    logger.debug(`getClipboardWithHashSQL: ${sql}`)
+    db.get(sql, (err, res) => {
       if (err) {
         reject(err)
       }
@@ -94,15 +87,21 @@ export const getClipboardWithHash = (hash, type) => {
 export const addData = (content, type, hash) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks,hash) VALUES (?,?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', '', hash], (err) => {
+    const mainSql = `INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks,hash) VALUES (${timestamp},${timestamp}, '${type}', 'n', 'n', '', '${hash}')`
+    logger.debug(`addDataMainSQL: ${mainSql}`)
+    db.run(mainSql, (err) => {
       if (err) {
         reject(err)
       }
-      db.get('SELECT last_insert_rowid()', (err, res) => {
+      const lastIDSQL = 'SELECT last_insert_rowid()'
+      logger.debug(`addDataLastIDSQL: ${lastIDSQL}`)
+      db.get(lastIDSQL, (err, res) => {
         if (err) {
           reject(err)
         }
-        db.run(`INSERT INTO ${DB_CONTENT_TABLE_NAME_MAP[type]}(clerk_id,${DB_CONTENT_COLUMN_MAP[type]}) VALUES (?,?)`, [res['last_insert_rowid()'], content], (err) => {
+        const contentSql = `INSERT INTO ${DB_CONTENT_TABLE_NAME_MAP[type]}(clerk_id,${DB_CONTENT_COLUMN_MAP[type]}) VALUES (${res['last_insert_rowid()']}, ?)`
+        logger.debug(`addDataContentSQL: ${contentSql}`)
+        db.run(contentSql, [content], (err) => {
           if (err) {
             reject(err)
           }
@@ -116,7 +115,9 @@ export const addData = (content, type, hash) => {
 export const updateUpdateTime = (id) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET update_time = ? WHERE id = ?`, [timestamp, id], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET update_time = ${timestamp} WHERE id = ${id}`
+    logger.debug(`updateUpdateTimeSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -126,8 +127,10 @@ export const updateUpdateTime = (id) => {
 }
 
 const listDataWithSql = (sql, countSql, page) => {
+  sql = `${sql} ORDER BY update_time DESC LIMIT ${page.limit} OFFSET ${page.offset}`
+  logger.debug(`listDataWithSqlSQL: ${sql}`)
   return new Promise((resolve, reject) => {
-    db.all(`${sql} ORDER BY update_time DESC LIMIT ? OFFSET ?`, [page.limit, page.offset], async (err, rows) => {
+    db.all(sql, async (err, rows) => {
       if (err) {
         reject(err)
       }
@@ -165,7 +168,6 @@ export const listData = (pageNumber, pageSize, typeSelect) => {
       countSql = `${countSql} AND type = '${typeSelect}'`
       break
   }
-  console.log('listSql', sql)
   return listDataWithSql(sql, countSql, page)
 }
 export const queryData = (pageNumber, pageSize, content, typeSelect) => {
@@ -184,13 +186,30 @@ export const queryData = (pageNumber, pageSize, content, typeSelect) => {
       countSql = `${countSql} AND type = '${typeSelect}'`
       break
   }
-  console.log('querySql', sql)
   return listDataWithSql(sql, countSql, page)
 }
 
 export const deleteData = (id) => {
   return new Promise((resolve, reject) => {
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y' WHERE id = ?`, [id], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y' WHERE id = ${id}`
+    logger.debug(`deleteSQL: ${sql}`)
+    db.run(sql, (err) => {
+      if (err) {
+        reject(err)
+      }
+      updateUpdateTime(id).then().catch(err => {
+        reject(err)
+      })
+      resolve()
+    })
+  })
+}
+
+export const undoDeleteData = (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'n' WHERE id = ${id}`
+    logger.debug(`undoDeleteSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -205,7 +224,9 @@ export const deleteData = (id) => {
 export const clearWithTime = (minTimestamp) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ? WHERE (collect != 'y' AND is_delete != 'y') AND update_time < ?`, [timestamp, minTimestamp], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ${timestamp} WHERE (collect != 'y' AND is_delete != 'y') AND update_time < ${minTimestamp}`
+    logger.debug(`clearWithTimeSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -218,7 +239,9 @@ export const clearMarkedDelete = () => {
   const periodTime = 60 * 60 * 24 * 30
   const timestamp = Math.floor(Date.now() / 1000) - periodTime
   return new Promise((resolve, reject) => {
-    db.run(`DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete = 'y' AND update_time < ?`, [timestamp], (err) => {
+    const sql = `DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete = 'y' AND update_time < ${timestamp}`
+    logger.debug(`clearMarkedDeleteSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -230,7 +253,9 @@ export const clearMarkedDelete = () => {
 export const clearWithNumber = (maxNumber) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ? WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' AND is_delete != 'y') ORDER BY update_time DESC LIMIT -1 OFFSET ?)`, [timestamp, maxNumber], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y', update_time = ${timestamp} WHERE id IN (SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' AND is_delete != 'y') ORDER BY update_time DESC LIMIT -1 OFFSET ${maxNumber})`
+    logger.debug(`clearWithNumberSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -244,7 +269,9 @@ export const updateCollect = (id, collect) => {
     updateUpdateTime(id).then().catch(err => {
       reject(err)
     })
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET collect = ? WHERE id = ?`, [collect, id], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET collect = '${collect}' WHERE id = ${id}`
+    logger.debug(`updateCollectSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -258,7 +285,9 @@ export const updateRemarks = (id, remarks) => {
     updateUpdateTime(id).then().catch(err => {
       reject(err)
     })
-    db.run(`UPDATE ${DB_MAIN_TABLE_NAME} SET remarks = ? WHERE id = ?`, [remarks, id], (err) => {
+    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET remarks = '${remarks}' WHERE id = ${id}`
+    logger.debug(`updateRemarksSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }
@@ -267,9 +296,11 @@ export const updateRemarks = (id, remarks) => {
   })
 }
 
-export const vacuumDB = (id, remarks) => {
+export const vacuumDB = () => {
   return new Promise((resolve, reject) => {
-    db.run('VACUUM', (err) => {
+    const sql = 'VACUUM'
+    logger.debug(`vacuumSQL: ${sql}`)
+    db.run(sql, (err) => {
       if (err) {
         reject(err)
       }

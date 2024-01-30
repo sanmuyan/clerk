@@ -84,6 +84,7 @@ import { ipcRenderer } from 'electron'
 import { getCurrentInstance, onMounted, ref, watch } from 'vue'
 import ContentDrawer from '@/components/ContentDrawer.vue'
 import ContentDetails from '@/components/ContentDetails.vue'
+import { logger } from '@/plugins/logger'
 
 const tableData = ref([])
 const inputQuery = ref('')
@@ -417,7 +418,7 @@ watch(() => typeSelect.value,
 
 // 键盘按下事件
 const handleKeyup = (event) => {
-  console.log('key up event: ', event.key)
+  logger.debug(`key up event: ${event.key}`)
   switch (event.key) {
     case 'c':
       if (isEnterControl.value) {
@@ -453,7 +454,7 @@ const handleKeyup = (event) => {
 }
 
 const handleKeydown = (event) => {
-  console.log('key down event: ', event.key)
+  logger.debug(`key down event: ${event.key}`)
   switch (event.key) {
     case 'Control':
       handleControl(event)
@@ -486,7 +487,7 @@ onMounted(() => {
 
 // 监听主进程消息
 ipcRenderer.on('message-from-main', (event, arg, data) => {
-  console.log('message-from-main: ', arg)
+  logger.debug(`message from main: ${arg}`)
   switch (arg) {
     case 'newClipboard':
       getTableData('reset')

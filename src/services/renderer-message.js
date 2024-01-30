@@ -1,9 +1,10 @@
-import { config } from '@/services/config'
+import { config } from '@/plugins/config'
 import { clipboard, nativeImage } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
 import { deleteData, listData, queryData, updateCollect, updateRemarks } from '@/plugins/sqlite'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
+import { logger } from '@/plugins/logger'
 
 export const handleRendererMessage = (event, arg, data) => {
   switch (arg) {
@@ -17,19 +18,19 @@ export const handleRendererMessage = (event, arg, data) => {
     case 'write':
       switch (data.type) {
         case 'text':
-          console.log('setClipboardText')
+          logger.debug('writeClipboardText')
           clipboard.writeText(data.content)
           break
         case 'image':
-          console.log('setClipboardImage')
+          logger.debug('writeClipboardImage')
           clipboard.writeImage(nativeImage.createFromDataURL(data.content))
           break
         case 'file':
-          console.log('setFileDropList')
+          logger.debug('setFileDropList')
           if (winToolsReady) {
             winToolsClient.SetFileDropList({ FileDropList: JSON.parse(data.content) }, (err, res) => {
               if (err) {
-                console.log('SetFileDropList failed', err)
+                logger.error(`setFileDropList failed: ${err}`)
               }
             })
           }

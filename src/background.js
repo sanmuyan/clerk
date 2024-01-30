@@ -3,13 +3,14 @@
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, protocol, Tray } from 'electron'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { initDB } from '@/plugins/sqlite'
-import { config, initConfig, isDevelopment } from '@/services/config'
+import { config, initConfig, isDevelopment } from '@/plugins/config'
 import { startWinTools, winToolsPing } from '@/services/wintools'
 import { clearHistoryData } from '@/services/prune'
 import { handleRendererMessage } from '@/services/renderer-message'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { startWatch } from '@/services/clipboard'
 import { createWindow, win } from '@/services/win'
+import { logger } from '@/plugins/logger'
 
 const fs = require('fs')
 
@@ -26,8 +27,6 @@ if (isDevelopment) {
   config.user_config.blur_hide = false
 }
 
-console.log('config: ', config)
-
 // 启动WinTools
 try {
   if (config.user_config.enable_win_tools) {
@@ -42,8 +41,11 @@ try {
 
 // 初始化数据库
 try {
-  initDB(config).then(() => {
+  initDB(config).then((res) => {
+    logger.info(res)
     start()
+  }).catch((err) => {
+    logger.error(`数据库初始化失败: ${err}`)
   })
 } catch (e) {
   dialog.showErrorBox('错误', '数据库初始化失败' + e.toString())
@@ -78,7 +80,7 @@ let tray = null
 let exiting = false
 
 const handleExit = () => {
-  console.log('进程退出')
+  logger.warn('进程退出')
   fs.writeFileSync(config.window_config_file, JSON.stringify(config.window, null, 2))
   app.quit()
   exiting = true

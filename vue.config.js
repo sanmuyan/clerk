@@ -4,6 +4,7 @@ module.exports = defineConfig({
   lintOnSave: false,
   pluginOptions: {
     electronBuilder: {
+      mainProcessWatch: ['src/**/*.js'],
       nodeIntegration: true,
       builderOptions: {
         productName: 'Clerk',

@@ -1,17 +1,22 @@
-import { addData, getClipboardWithHash, updateUpdateTime } from '@/plugins/sqlite'
+import { addData, getClipboardWithHash, undoDeleteData, updateUpdateTime } from '@/plugins/sqlite'
 import { clipboard } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
-import { config } from '@/services/config'
+import { config } from '@/plugins/config'
 import { getHash } from '@/plugins/hash'
 import { win } from '@/services/win'
+import { logger } from '@/plugins/logger'
 
 const handleClipboard = (currentContent, type, currentHash) => {
-  console.log('clipboard update', type)
   const timestamp = Math.floor(Date.now() / 1000)
   getClipboardWithHash(currentHash, type).then(async (res) => {
     if (res) {
+      logger.info(`updateClipboard: type=${type} hash=${currentHash}`)
+      if (res.is_delete === 'y') {
+        await undoDeleteData(res.id)
+      }
       await updateUpdateTime(res.id, timestamp)
     } else {
+      logger.info(`addClipboard: type=${type} hash=${currentHash}`)
       await addData(currentContent, type, currentHash)
     }
     win.webContents.send('message-from-main', 'newClipboard')
@@ -86,7 +91,7 @@ const watchFile = () => {
   if (winToolsReady) {
     winToolsClient.GetFileDropList({}, (err, res) => {
       if (err) {
-        console.log('GetFileDropList failed:', err)
+        logger.error(`getFileDropList: ${err}`)
         return
       }
       fileDropList = res.FileDropList
@@ -101,7 +106,7 @@ const watchFile = () => {
   try {
     currentFile = JSON.stringify(fileDropList)
   } catch (e) {
-    console.log(e)
+    logger.error(`watchFile: ${e}`)
     return
   }
   currentFile = currentFile.replace(/\\\\/g, '/')

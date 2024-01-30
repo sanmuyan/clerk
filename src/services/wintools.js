@@ -1,6 +1,7 @@
-import { config, isDevelopment } from '@/services/config'
+import { config, isDevelopment } from '@/plugins/config'
 import { getClient } from '@/plugins/wintools'
 import { spawn } from 'child_process'
+import { logger } from '@/plugins/logger'
 
 export let winToolsReady = false
 export let winToolsClient = {
@@ -14,10 +15,10 @@ export let winToolsClient = {
 export const winToolsPing = () => {
   winToolsClient.Ping({}, (err, res) => {
     if (err) {
-      console.log('WinTools 服务连接失败')
+      logger.debug('winTools 服务连接失败')
       winToolsReady = false
     } else {
-      console.log('WinTools 服务连接成功')
+      logger.debug('winTools 服务连接成功')
       winToolsReady = true
     }
   })
@@ -26,19 +27,20 @@ export const winToolsPing = () => {
 export const startWinTools = () => {
   if (isDevelopment) {
     winToolsClient = getClient(config)
+    logger.warn('开发模式 winTools 需要手动启动')
   } else {
     const winToolsRunning = spawn(config.win_tools_file, [config.user_config.win_tools_port.toString()])
     winToolsRunning.stdout.on('data', (data) => {
-      console.log('WinTools 运行中: ' + data.toString())
+      logger.info(`winTools 运行中: ${data.toString()}`)
       if (!winToolsReady) {
         winToolsClient = getClient(config)
       }
     })
     winToolsRunning.stderr.on('data', (data) => {
-      console.log('WinTools 运行错误: ' + data.toString())
+      logger.error(`winTools 运行错误: ${data.toString()}`)
     })
     winToolsRunning.on('exit', (code, signal) => {
-      console.log('WinTools 运行退出: ', code, signal)
+      logger.warn(`winTools 运行退出: ${code} ${signal}`)
       winToolsReady = false
       startWinTools()
     })

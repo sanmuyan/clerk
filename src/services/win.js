@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { config } from '@/services/config'
+import { config } from '@/plugins/config'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 
 export let win = null

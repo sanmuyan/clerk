@@ -1,12 +1,13 @@
 import { app, dialog } from 'electron'
 import fs from 'fs'
 import { getUserConfig } from '@/utils/config'
+import { initLogger, logger } from '@/plugins/logger'
 
 export const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // 初始化配置
 const userHome = app.getPath('home').replace(/\\/g, '/')
-console.log('userHome', userHome)
+logger.info(`userHome=${userHome}`)
 let appPath = app.getAppPath().replace(/\\/g, '/').replace('/app.asar', '')
 let resourcesPath = appPath
 if (isDevelopment) {
@@ -14,9 +15,10 @@ if (isDevelopment) {
   resourcesPath = appPath + '/resources'
 }
 const userConfigPath = userHome + '/.clerk'
-console.log('appPath', appPath)
-console.log('resourcesPath', resourcesPath)
-console.log('userConfigPath', userConfigPath)
+logger.info(`appPath=${appPath}`)
+logger.info(`resourcesPath:=${resourcesPath}`)
+logger.info(`userConfigPath=${userConfigPath}`)
+
 let winToolsFile = null
 if (process.platform === 'win32') {
   winToolsFile = resourcesPath + '/WinTools/win-x64/WinTools.exe'
@@ -62,7 +64,7 @@ export const initConfig = () => {
     try {
       config.window = JSON.parse(fs.readFileSync(config.window_config_file, 'utf8'))
     } catch (e) {
-      console.log('window.json文件不存在')
+      logger.error('window.json 文件不存在')
     }
     const userConfig = getUserConfig(config)
     for (const key in userConfig) {
@@ -73,3 +75,6 @@ export const initConfig = () => {
     app.quit()
   }
 }
+
+// 初始化 logger
+initLogger(isDevelopment, 'info', `${resourcesPath}/app.log`)
