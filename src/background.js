@@ -1,43 +1,17 @@
 'use strict'
 
-import {
-  app,
-  BrowserWindow,
-  clipboard,
-  dialog,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  nativeImage,
-  protocol,
-  screen,
-  Tray
-} from 'electron'
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, protocol, Tray } from 'electron'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-import {
-  addData,
-  addImageData,
-  clearMarkedDelete,
-  clearWithNumber,
-  clearWithTime,
-  deleteData,
-  getContentWithContent,
-  getImageChecksumsWithChecksums,
-  initDB,
-  listData,
-  queryData,
-  updateCollect,
-  updateRemarks,
-  updateUpdateTime,
-  vacuumDB
-} from '@/plugins/sqlite'
-import { getUserConfig } from '@/utils/config'
-import { getClient } from '@/plugins/wintools'
-import crypto from 'crypto'
+import { initDB } from '@/plugins/sqlite'
+import { config, initConfig, isDevelopment } from '@/services/config'
+import { startWinTools, winToolsPing } from '@/services/wintools'
+import { clearHistoryData } from '@/services/prune'
+import { handleRendererMessage } from '@/services/renderer-message'
+import { handleWinDisplay, winShow } from '@/services/windisplay'
+import { startWatch } from '@/services/clipboard'
+import { createWindow, win } from '@/services/win'
 
 const fs = require('fs')
-const { spawn } = require('child_process')
 
 // 禁止多实例运行
 const gotTheLock = app.requestSingleInstanceLock()
@@ -45,75 +19,8 @@ if (!gotTheLock) {
   app.quit()
 }
 
-const isDevelopment = process.env.NODE_ENV !== 'production'
-
 // 初始化配置
-const userHome = app.getPath('home').replace(/\\/g, '/')
-console.log('userHome', userHome)
-let appPath = app.getAppPath().replace(/\\/g, '/').replace('/app.asar', '')
-let resourcesPath = appPath
-if (isDevelopment) {
-  appPath = '.'
-  resourcesPath = appPath + '/resources'
-}
-const userConfigPath = userHome + '/.clerk'
-console.log('appPath', appPath)
-console.log('resourcesPath', resourcesPath)
-console.log('userConfigPath', userConfigPath)
-let winToolsFile = null
-if (process.platform === 'win32') {
-  winToolsFile = resourcesPath + '/WinTools/win-x64/WinTools.exe'
-  if (isDevelopment) {
-    winToolsFile = appPath + '/WinTools/WinTools/bin/Release/net7.0/win-x64/WinTools.exe'
-  }
-}
-
-let config = {}
-
-try {
-  config = {
-    user_home: userHome,
-    app_path: appPath,
-    resources_path: resourcesPath,
-    win_tools_file: winToolsFile,
-    win_tools_proto_file: resourcesPath + '/WinTools.proto',
-    user_config_path: userConfigPath,
-    init_sql: fs.readFileSync(resourcesPath + '/init.sql', 'utf8'),
-    window: {
-      width: 600,
-      height: 800
-    },
-    window_config_file: userConfigPath + '/window.json',
-    user_config: {
-      enable_win_tools: true,
-      win_tools_port: 50051,
-      shortcut_keys: 'Ctrl+Right',
-      db_file: userConfigPath + '/clerk.db',
-      max_number: 0,
-      max_time: 0,
-      blur_hide: true,
-      copy_hide: true,
-      hide_paste: true,
-      page_size: 10,
-      enable_text: true,
-      enable_image: true,
-      enable_file: true
-    },
-    logo_file: resourcesPath + '/logo.png'
-  }
-  try {
-    config.window = JSON.parse(fs.readFileSync(config.window_config_file, 'utf8'))
-  } catch (e) {
-    console.log('window.json文件不存在')
-  }
-  const userConfig = getUserConfig(config)
-  for (const key in userConfig) {
-    config.user_config[key] = userConfig[key]
-  }
-} catch (e) {
-  dialog.showErrorBox('错误', '生成配置失败' + e.toString())
-  app.quit()
-}
+initConfig()
 
 if (isDevelopment) {
   config.user_config.blur_hide = false
@@ -122,43 +29,6 @@ if (isDevelopment) {
 console.log('config: ', config)
 
 // 启动WinTools
-let winToolsReady = false
-let winToolsClient = null
-
-const winToolsPing = () => {
-  winToolsClient.Ping({}, (err, res) => {
-    if (err) {
-      console.log('WinTools 服务连接失败')
-      winToolsReady = false
-    } else {
-      console.log('WinTools 服务连接成功')
-      winToolsReady = true
-    }
-  })
-}
-
-const startWinTools = () => {
-  if (isDevelopment) {
-    winToolsClient = getClient(config)
-  } else {
-    const winToolsRunning = spawn(config.win_tools_file, [config.user_config.win_tools_port.toString()])
-    winToolsRunning.stdout.on('data', (data) => {
-      console.log('WinTools 运行中: ' + data.toString())
-      if (!winToolsReady) {
-        winToolsClient = getClient(config)
-      }
-    })
-    winToolsRunning.stderr.on('data', (data) => {
-      console.log('WinTools 运行错误: ' + data.toString())
-    })
-    winToolsRunning.on('exit', (code, signal) => {
-      console.log('WinTools 运行退出: ', code, signal)
-      winToolsReady = false
-      startWinTools()
-    })
-  }
-}
-
 try {
   if (config.user_config.enable_win_tools) {
     startWinTools()
@@ -170,6 +40,7 @@ try {
   dialog.showErrorBox('错误', 'WinTools服务连接失败' + e.toString())
 }
 
+// 初始化数据库
 try {
   initDB(config).then(() => {
     start()
@@ -203,37 +74,8 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
-let win = null
 let tray = null
-let winShow = false
 let exiting = false
-
-async function createWindow () {
-  // Create the browser window.
-  win = new BrowserWindow({
-    width: config.window.width || 600,
-    height: config.window.height || 800,
-    show: false,
-    frame: false,
-    webPreferences: {
-
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
-    }
-  })
-
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools()
-  } else {
-    createProtocol('app')
-    // Load the index.html when not in development
-    win.loadURL('app://./index.html')
-  }
-}
 
 const handleExit = () => {
   console.log('进程退出')
@@ -241,90 +83,6 @@ const handleExit = () => {
   app.quit()
   exiting = true
 }
-
-const handleWinPosition = () => {
-  const cursorX = screen.getCursorScreenPoint().x
-  const cursorY = screen.getCursorScreenPoint().y
-  const display = screen.getPrimaryDisplay()
-
-  let winX = cursorX
-  let winY = cursorY
-  if (cursorX + config.window.width > display.size.width) {
-    // 默认会出现在鼠标右侧。如果鼠标位置+窗口宽度超过屏幕宽度，则窗口位置出现在鼠标左侧
-    winX = cursorX - config.window.width
-  } else {
-    // 窗口往左移动确保鼠标在窗口内
-    winX -= 50
-  }
-  if (cursorY + config.window.height > display.size.height) {
-    // 默认窗口顶部会出现在鼠标位置下部，如果鼠标位置+窗口高度超过屏幕高度，则窗口底部出现在屏幕最大高度点
-    winY = display.size.height - config.window.height
-    // 减去任务栏高度
-    winY = winY - 50
-  } else {
-    // 窗口往上移动确保鼠标在窗口内
-    if (cursorY > 20) {
-      winY -= 40
-    }
-  }
-  win.setPosition(winX, winY)
-}
-
-let foregroundWindow = null
-const handleWinDisplay = (triggerPaste) => {
-  if (winShow) {
-    console.log('winHide')
-    winShow = false
-    win.hide()
-    if (winToolsReady) {
-      console.log('setForegroundWindow', foregroundWindow)
-      const msg = {
-        ForegroundWindow: foregroundWindow
-      }
-      if (triggerPaste) {
-        msg.IsPaste = true
-        console.log('triggerPaste', foregroundWindow)
-      }
-      winToolsClient.SetForegroundWindow(msg, (err, res) => {
-        if (err) {
-          console.log('SetForegroundWindow failed', err)
-        } else {
-          if (!res.Status) {
-            console.log('SetForegroundWindow not true')
-            winToolsClient.SetForegroundWindow(msg, (err, res) => {
-              if (err) {
-                console.log('SetForegroundWindow failed', err)
-              } else {
-                if (!res.Status) {
-                  console.log('SetForegroundWindow not true again')
-                }
-              }
-            })
-          }
-        }
-      })
-    }
-    win.webContents.send('message-from-main', 'reset')
-  } else {
-    console.log('winShow')
-    winShow = true
-    handleWinPosition()
-    if (winToolsReady) {
-      winToolsClient.GetForegroundWindow({}, (err, res) => {
-        if (err) {
-          console.log('GetForegroundWindow failed', err)
-        } else {
-          foregroundWindow = res.ForegroundWindow
-          console.log('foregroundWindow', foregroundWindow)
-        }
-        win.show()
-      })
-    } else {
-      win.show()
-    }
-  }
-}
-
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -337,7 +95,7 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  if (BrowserWindow.getAllWindows().length === 0) createWindow().then()
 })
 
 // This method will be called when Electron has finished
@@ -422,244 +180,12 @@ if (isDevelopment) {
 
 // 监听渲染进程发送的消息
 ipcMain.on('message-from-renderer', (event, arg, data) => {
-  switch (arg) {
-    case 'hide_paste':
-      if (winShow) {
-        if (config.user_config.hide_paste) {
-          handleWinDisplay(true)
-        }
-      }
-      break
-    case 'write':
-      switch (data.type) {
-        case 'text':
-          console.log('setClipboardText')
-          clipboard.writeText(data.content)
-          break
-        case 'image':
-          console.log('setClipboardImage')
-          clipboard.writeImage(nativeImage.createFromDataURL(data.content))
-          break
-        case 'file':
-          console.log('setFileDropList')
-          if (winToolsReady) {
-            winToolsClient.SetFileDropList({ FileDropList: JSON.parse(data.content) }, (err, res) => {
-              if (err) {
-                console.log('SetFileDropList failed', err)
-              }
-            })
-          }
-      }
-      break
-    case 'init':
-      win.webContents.send('message-from-main', 'init', config)
-      break
-    case 'queryData':
-      queryData(data.pageNumber, data.pageSize, data.inputQuery, data.typeSelect).then(res => {
-        win.webContents.send('message-from-main', 'queryData', {
-          data: res,
-          action: data.action
-        })
-      })
-      break
-    case 'listData':
-      listData(data.pageNumber, data.pageSize, data.typeSelect).then(res => {
-        win.webContents.send('message-from-main', 'listData', {
-          data: res,
-          action: data.action
-        })
-      })
-      break
-    case 'delete':
-      deleteData(data.id).then(() => {
-        win.webContents.send('message-from-main', 'reset')
-      })
-      break
-    case 'updateCollect':
-      updateCollect(data.id, data.collect).then(() => {
-        win.webContents.send('message-from-main', 'reset')
-      })
-      break
-    case 'updateRemarks':
-      updateRemarks(data.id, data.remarks).then(() => {
-        win.webContents.send('message-from-main', 'reset')
-      })
-      break
-  }
+  handleRendererMessage(event, arg, data)
 })
 
-// 监听并处理剪贴板变化
-const handleClipboard = (current, type) => {
-  console.log('clipboard update', type)
-  const timestamp = Math.floor(Date.now() / 1000)
-  getContentWithContent(current, type).then(async (res) => {
-    if (res) {
-      await updateUpdateTime(res.clerk_id, timestamp)
-    } else {
-      await addData(current, type)
-    }
-    win.webContents.send('message-from-main', 'newClipboard')
-  })
-}
-
-const handleImageClipboard = (current, type, imageChecksums) => {
-  console.log('clipboard update', type)
-  getImageChecksumsWithChecksums(imageChecksums, type).then(async (res) => {
-    if (res) {
-      await updateUpdateTime(res.clerk_id)
-    } else {
-      await addImageData(current, type, imageChecksums)
-    }
-    win.webContents.send('message-from-main', 'newClipboard')
-  })
-}
-
-let previousText = null
-let previousFile = null
-let previousImageChecksums = null
-let fileDropList = []
-
-const clearPrevious = (type) => {
-  switch (type) {
-    case 'file':
-      if (clipboard.readText() === '') {
-        previousText = null
-      }
-      if (clipboard.readImage().isEmpty()) {
-        previousImageChecksums = null
-      }
-      break
-    case 'text':
-      previousImageChecksums = null
-      previousFile = null
-      break
-    case 'image':
-      if (clipboard.readText() === '') {
-        previousText = null
-      }
-      previousFile = null
-      break
-  }
-}
-
-const watchText = () => {
-  const type = 'text'
-  const currentText = clipboard.readText()
-  // 文本不能超过1MB
-  if (currentText === '' || currentText.trim().length === 0 || currentText.length > 1048576) {
-    return
-  }
-  if (previousText === currentText) {
-    return
-  }
-  previousText = currentText
-  handleClipboard(currentText, type)
-  clearPrevious(type)
-}
-
-const watchImage = () => {
-  const type = 'image'
-  const image = clipboard.readImage()
-  if (image.isEmpty()) {
-    return
-  }
-  const imageContent = image.toPNG()
-  const md5 = crypto.createHash('md5')
-  md5.update(imageContent)
-  const currentImageChecksums = md5.digest('hex')
-  // 图片不能大于10MB
-  if (imageContent.length > 10485760) {
-    return
-  }
-
-  if (currentImageChecksums === previousImageChecksums) {
-    return
-  }
-  previousImageChecksums = currentImageChecksums
-  handleImageClipboard(imageContent, type, currentImageChecksums)
-  clearPrevious(type)
-}
-const watchFile = () => {
-  if (winToolsReady) {
-    winToolsClient.GetFileDropList({}, (err, res) => {
-      if (err) {
-        console.log('GetFileDropList failed:', err)
-        return
-      }
-      fileDropList = res.FileDropList
-    })
-  }
-
-  const type = 'file'
-  if (Object.keys(fileDropList).length === 0) {
-    return
-  }
-  let currentFile = null
-  try {
-    currentFile = JSON.stringify(fileDropList)
-  } catch (e) {
-    console.log(e)
-    return
-  }
-  currentFile = currentFile.replace(/\\\\/g, '/')
-  if (previousFile === currentFile) {
-    return
-  }
-  previousFile = currentFile
-  handleClipboard(currentFile, type)
-  clearPrevious(type)
-}
-
-const startWatch = (interval) => {
-  const si = setInterval(() => {
-    if (exiting) {
-      clearInterval(si)
-    }
-    if (config.user_config.enable_text) {
-      watchText()
-    }
-    if (config.user_config.enable_image) {
-      watchImage()
-    }
-    if (config.user_config.enable_file) {
-      watchFile()
-    }
-  }, interval)
-}
-
-// 启动时清理历史数据
-const clearHistoryData = async () => {
-  if (config.user_config.max_time > 0) {
-    const timestamp = Math.floor(Date.now() / 1000)
-    await clearWithTime(timestamp - config.user_config.max_time).then((err) => {
-      if (err) {
-        console.log(err)
-      }
-    })
-  }
-  if (config.user_config.max_number > 0) {
-    console.log('clearWithNumber')
-    await clearWithNumber(config.user_config.max_number).then((err) => {
-      if (err) {
-        console.log(err)
-      }
-    })
-  }
-
-  await clearMarkedDelete().then((err) => {
-    if (err) {
-      console.log(err)
-    }
-  })
-
-  await vacuumDB().then((err) => {
-    if (err) {
-      console.log(err)
-    }
-  })
-}
-
 const start = () => {
+  // 启动时清理历史数据
   clearHistoryData().then()
-  startWatch(500)
+  // 监听并处理剪贴板变化
+  startWatch(500, exiting)
 }
