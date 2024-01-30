@@ -78,9 +78,9 @@ export const getImageChecksumsWithChecksums = (imageChecksums, type) => {
   })
 }
 
-export const getContentWithContent = (content, type) => {
+export const getClipboardWithHash = (hash, type) => {
   return new Promise((resolve, reject) => {
-    db.get(`SELECT * FROM ${DB_CONTENT_TABLE_NAME_MAP[type]} WHERE ${DB_CONTENT_COLUMN_MAP[type]} = ?`, [content], (err, res) => {
+    db.get(`SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE hash = ?`, [hash], (err, res) => {
       if (err) {
         reject(err)
       }
@@ -91,32 +91,10 @@ export const getContentWithContent = (content, type) => {
     })
   })
 }
-
-export const addImageData = (content, type, imageChecksums) => {
+export const addData = (content, type, hash) => {
   const timestamp = Math.floor(Date.now() / 1000)
   return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks) VALUES (?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', ''], (err) => {
-      if (err) {
-        reject(err)
-      }
-      db.get('SELECT last_insert_rowid()', (err, res) => {
-        if (err) {
-          reject(err)
-        }
-        db.run(`INSERT INTO ${DB_CONTENT_TABLE_NAME_MAP[type]}(clerk_id,${DB_CONTENT_COLUMN_MAP[type]},${DB_IMAGE_CHECKSUMS_COLUMN}) VALUES (?,?,?)`, [res['last_insert_rowid()'], content, imageChecksums], (err) => {
-          if (err) {
-            reject(err)
-          }
-        })
-      })
-      resolve()
-    })
-  })
-}
-export const addData = (content, type) => {
-  const timestamp = Math.floor(Date.now() / 1000)
-  return new Promise((resolve, reject) => {
-    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks) VALUES (?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', ''], (err) => {
+    db.run(`INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks,hash) VALUES (?,?,?,?,?,?,?)`, [timestamp, timestamp, type, 'n', 'n', '', hash], (err) => {
       if (err) {
         reject(err)
       }

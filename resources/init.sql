@@ -5,7 +5,8 @@ CREATE TABLE "clerk" (
   "remarks" TEXT NOT NULL,
   "create_time" integer NOT NULL,
   "update_time" integer NOT NULL,
-  "is_delete" TEXT NOT NULL
+  "is_delete" TEXT NOT NULL,
+  "hash" TEXT NOT NULL
 );
 
 
@@ -34,11 +35,16 @@ ON "clerk" (
   "update_time" DESC
 );
 
+CREATE UNIQUE INDEX "clerk_hash"
+ON "clerk" (
+  "hash" ASC
+);
+
 CREATE TABLE "clerk_text" (
   "clerk_id" INTEGER NOT NULL,
   "text_content" TEXT NOT NULL,
   PRIMARY KEY ("clerk_id"),
-  CONSTRAINT "clerk_text_content" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT "clerk_text" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 );
 
 CREATE UNIQUE INDEX "clerk_text_text_context"
@@ -49,12 +55,6 @@ ON "clerk_text" (
 CREATE TABLE "clerk_image" (
   "clerk_id" INTEGER NOT NULL,
   "image_content" blob NOT NULL,
-  "image_checksums" TEXT NOT NULL,
   PRIMARY KEY ("clerk_id"),
-  CONSTRAINT "clerk_image_content" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
-);
-
-CREATE UNIQUE INDEX "clerk_image_image_content"
-ON "clerk_image" (
-  "image_content" ASC
+  CONSTRAINT "clerk_image" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 );
