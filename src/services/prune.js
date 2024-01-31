@@ -1,5 +1,5 @@
 import { config } from '@/plugins/config'
-import { clearMarkedDelete, clearWithNumber, clearWithTime, vacuumDB } from '@/plugins/sqlite'
+import { clearWithNumber, clearWithTime, vacuumDB } from '@/plugins/sqlite'
 import { logger } from '@/plugins/logger'
 
 export const clearHistoryData = async () => {
@@ -21,12 +21,6 @@ export const clearHistoryData = async () => {
     })
   }
 
-  logger.warn('run clearMarkedDelete')
-  await clearMarkedDelete().catch((err) => {
-    if (err) {
-      logger.error(`clearMarkedDelete: ${err}`)
-    }
-  })
   logger.warn('run vacuumDB')
   await vacuumDB().catch((err) => {
     if (err) {

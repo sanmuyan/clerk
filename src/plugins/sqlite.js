@@ -77,7 +77,7 @@ const getContentWithRow = (row) => {
 
 export const getClipboardWithHash = (hash, type) => {
   return new Promise((resolve, reject) => {
-    const sql = `SELECT id,is_delete FROM ${DB_MAIN_TABLE_NAME} WHERE hash = '${hash}'`
+    const sql = `SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE hash = '${hash}'`
     logger.debug(`getClipboardWithHashSQL: ${sql}`)
     db.get(sql, (err, res) => {
       if (err) {
@@ -96,7 +96,7 @@ export const getClipboardWithHash = (hash, type) => {
 export const addData = (content, type, hash) => {
   return new Promise((resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000)
-    const mainSql = `INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,is_delete,remarks,hash) VALUES (${timestamp},${timestamp}, '${type}', 'n', 'n', '', '${hash}')`
+    const mainSql = `INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,remarks,hash) VALUES (${timestamp},${timestamp}, '${type}', 'n', '', '${hash}')`
     logger.debug(`addDataMainSQL: ${mainSql}`)
     db.run('BEGIN TRANSACTION')
     db.run(mainSql, (err) => {
@@ -176,26 +176,26 @@ const listDataWithSql = (sql, countSql, page) => {
 }
 export const listData = (pageNumber, pageSize, typeSelect) => {
   const page = getPaginator(pageNumber, pageSize)
-  let sql = `SELECT * FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete != 'y'`
-  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete != 'y'`
+  let sql = `SELECT * FROM ${DB_MAIN_TABLE_NAME}`
+  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME}`
   switch (typeSelect) {
     case 'all':
       break
     case 'collect':
-      sql = `${sql} AND collect = 'y'`
-      countSql = `${countSql} AND collect = 'y'`
+      sql = `${sql} WHERE collect = 'y'`
+      countSql = `${countSql} WHERE collect = 'y'`
       break
     default:
-      sql = `${sql} AND type = '${typeSelect}'`
-      countSql = `${countSql} AND type = '${typeSelect}'`
+      sql = `${sql} WHERE type = '${typeSelect}'`
+      countSql = `${countSql} WHERE type = '${typeSelect}'`
       break
   }
   return listDataWithSql(sql, countSql, page)
 }
 export const queryData = (pageNumber, pageSize, content, typeSelect) => {
   const page = getPaginator(pageNumber, pageSize)
-  let sql = `SELECT ${DB_MAIN_TABLE_NAME}.* FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.file} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.file}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE is_delete != 'y' AND (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR ${DB_CONTENT_TABLE_NAME_MAP.file}.${DB_CONTENT_COLUMN_MAP.file} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
-  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.file} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.file}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE is_delete != 'y' AND (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR ${DB_CONTENT_TABLE_NAME_MAP.file}.${DB_CONTENT_COLUMN_MAP.file} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
+  let sql = `SELECT ${DB_MAIN_TABLE_NAME}.* FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.file} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.file}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR ${DB_CONTENT_TABLE_NAME_MAP.file}.${DB_CONTENT_COLUMN_MAP.file} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
+  let countSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME} LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.text} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.text}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.file} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.file}.clerk_id LEFT JOIN ${DB_CONTENT_TABLE_NAME_MAP.image} ON ${DB_MAIN_TABLE_NAME}.id = ${DB_CONTENT_TABLE_NAME_MAP.image}.clerk_id WHERE (${DB_CONTENT_TABLE_NAME_MAP.text}.${DB_CONTENT_COLUMN_MAP.text} LIKE '%${content}%' OR ${DB_CONTENT_TABLE_NAME_MAP.file}.${DB_CONTENT_COLUMN_MAP.file} LIKE '%${content}%' OR remarks LIKE '%${content}%')`
   switch (typeSelect) {
     case 'all':
       break
@@ -213,46 +213,8 @@ export const queryData = (pageNumber, pageSize, content, typeSelect) => {
 
 export const deleteData = (id) => {
   return new Promise((resolve, reject) => {
-    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'y' WHERE id = ${id}`
+    const sql = `DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE id = ${id} AND collect != 'y'`
     logger.debug(`deleteSQL: ${sql}`)
-    db.run(sql, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        updateUpdateTime(id).then(() => {
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
-      }
-    })
-  })
-}
-
-export const undoDeleteData = (id) => {
-  return new Promise((resolve, reject) => {
-    const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET is_delete = 'n' WHERE id = ${id}`
-    logger.debug(`undoDeleteSQL: ${sql}`)
-    db.run(sql, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        updateUpdateTime(id).then(() => {
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
-      }
-    })
-  })
-}
-
-export const clearMarkedDelete = () => {
-  const periodTime = 60 * 60 * 24 * 7
-  const timestamp = Math.floor(Date.now() / 1000) - periodTime
-  return new Promise((resolve, reject) => {
-    const sql = `DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE is_delete = 'y' AND update_time < ${timestamp}`
-    logger.debug(`clearMarkedDeleteSQL: ${sql}`)
     db.run(sql, (err) => {
       if (err) {
         reject(err)
@@ -265,7 +227,7 @@ export const clearMarkedDelete = () => {
 
 export const clearWithTime = (minTimestamp) => {
   return new Promise((resolve, reject) => {
-    const sql = `SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' AND is_delete != 'y') AND update_time < ${minTimestamp}`
+    const sql = `SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE collect != 'y' AND update_time < ${minTimestamp}`
     logger.debug(`clearWithTimeSQL: ${sql}`)
     db.all(sql, (err, rows) => {
       if (err) {
@@ -284,7 +246,7 @@ export const clearWithTime = (minTimestamp) => {
 
 export const clearWithNumber = (maxNumber) => {
   return new Promise((resolve, reject) => {
-    const sql = `SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE (collect != 'y' AND is_delete != 'y') ORDER BY update_time DESC LIMIT -1 OFFSET ${maxNumber}`
+    const sql = `SELECT id FROM ${DB_MAIN_TABLE_NAME} WHERE collect != 'y' ORDER BY update_time DESC LIMIT -1 OFFSET ${maxNumber}`
     logger.debug(`clearWithNumberSQL: ${sql}`)
     db.all(sql, (err, rows) => {
       if (err) {

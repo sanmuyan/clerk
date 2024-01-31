@@ -5,7 +5,6 @@ CREATE TABLE "clerk" (
   "remarks" TEXT,
   "create_time" integer NOT NULL,
   "update_time" integer NOT NULL,
-  "is_delete" TEXT NOT NULL,
   "hash" TEXT NOT NULL,
   CONSTRAINT "clerk_type_hash" UNIQUE ("type" ASC, "hash" ASC)
 );
@@ -21,10 +20,6 @@ ON "clerk" (
 CREATE INDEX "clerk_hash"
 ON "clerk" (
   "hash" ASC
-);
-CREATE INDEX "clerk_is_delete"
-ON "clerk" (
-  "is_delete" ASC
 );
 CREATE INDEX "clerk_remarks"
 ON "clerk" (
