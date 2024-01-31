@@ -6,7 +6,7 @@ export const clearHistoryData = async () => {
   if (config.user_config.max_time > 0) {
     const timestamp = Math.floor(Date.now() / 1000)
     logger.warn('run clearWithTime')
-    await clearWithTime(timestamp - config.user_config.max_time).then((err) => {
+    await clearWithTime(timestamp - config.user_config.max_time).catch(err => {
       if (err) {
         logger.error(`clearWithTime: ${err}`)
       }
@@ -14,22 +14,21 @@ export const clearHistoryData = async () => {
   }
   if (config.user_config.max_number > 0) {
     logger.warn('run clearWithNumber')
-    await clearWithNumber(config.user_config.max_number).then((err) => {
+    await clearWithNumber(config.user_config.max_number).catch(err => {
       if (err) {
         logger.error(`clearWithNumber: ${err}`)
       }
     })
   }
 
-  await clearMarkedDelete().then((err) => {
-    logger.warn('run clearMarkedDelete')
+  logger.warn('run clearMarkedDelete')
+  await clearMarkedDelete().catch((err) => {
     if (err) {
       logger.error(`clearMarkedDelete: ${err}`)
     }
   })
-
-  await vacuumDB().then((err) => {
-    logger.warn('run vacuumDB')
+  logger.warn('run vacuumDB')
+  await vacuumDB().catch((err) => {
     if (err) {
       logger.error(`vacuumDB: ${err}`)
     }

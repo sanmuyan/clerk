@@ -10,14 +10,21 @@ const handleClipboard = (currentContent, type, currentHash) => {
   const timestamp = Math.floor(Date.now() / 1000)
   getClipboardWithHash(currentHash, type).then(async (res) => {
     if (res) {
-      logger.info(`updateClipboard: type=${type} hash=${currentHash}`)
+      logger.info(`updateClipboard: id=${res.id} type=${type} hash=${currentHash}`)
       if (res.is_delete === 'y') {
-        await undoDeleteData(res.id)
+        await undoDeleteData(res.id).catch(err => {
+          logger.error(`undoDeleteData: ${err}`)
+        })
+      } else {
+        await updateUpdateTime(res.id, timestamp).catch(err => {
+          logger.error(`updateUpdateTime: ${err}`)
+        })
       }
-      await updateUpdateTime(res.id, timestamp)
     } else {
       logger.info(`addClipboard: type=${type} hash=${currentHash}`)
-      await addData(currentContent, type, currentHash)
+      await addData(currentContent, type, currentHash).catch(err => {
+        logger.error(`addClipboard: ${err}`)
+      })
     }
     win.webContents.send('message-from-main', 'newClipboard')
   })
@@ -87,36 +94,34 @@ const watchImage = () => {
   clearPrevious(type)
 }
 const watchFile = () => {
-  let fileDropList = []
   if (winToolsReady) {
     winToolsClient.GetFileDropList({}, (err, res) => {
       if (err) {
         logger.error(`getFileDropList: ${err}`)
         return
       }
-      fileDropList = res.FileDropList
+      const fileDropList = res.FileDropList
+      const type = 'file'
+      if (Object.keys(fileDropList).length === 0) {
+        return
+      }
+      let currentFile = null
+      try {
+        currentFile = JSON.stringify(fileDropList)
+      } catch (e) {
+        logger.error(`watchFile: ${e}`)
+        return
+      }
+      currentFile = currentFile.replace(/\\\\/g, '/')
+      const currentFileHash = getHash(currentFile)
+      if (previousFileHash === currentFileHash) {
+        return
+      }
+      previousFileHash = currentFileHash
+      handleClipboard(currentFile, type, currentFileHash)
+      clearPrevious(type)
     })
   }
-
-  const type = 'file'
-  if (Object.keys(fileDropList).length === 0) {
-    return
-  }
-  let currentFile = null
-  try {
-    currentFile = JSON.stringify(fileDropList)
-  } catch (e) {
-    logger.error(`watchFile: ${e}`)
-    return
-  }
-  currentFile = currentFile.replace(/\\\\/g, '/')
-  const currentFileHash = getHash(currentFile)
-  if (previousFileHash === currentFileHash) {
-    return
-  }
-  previousFileHash = currentFile
-  handleClipboard(currentFile, type)
-  clearPrevious(type)
 }
 
 export const startWatch = (interval, exiting) => {

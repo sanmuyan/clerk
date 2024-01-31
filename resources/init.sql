@@ -2,13 +2,13 @@ CREATE TABLE "clerk" (
   "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   "type" TEXT NOT NULL,
   "collect" TEXT NOT NULL,
-  "remarks" TEXT NOT NULL,
+  "remarks" TEXT,
   "create_time" integer NOT NULL,
   "update_time" integer NOT NULL,
   "is_delete" TEXT NOT NULL,
-  "hash" TEXT NOT NULL
+  "hash" TEXT NOT NULL,
+  CONSTRAINT "clerk_type_hash" UNIQUE ("type" ASC, "hash" ASC)
 );
-
 
 CREATE INDEX "clerk_collect"
 ON "clerk" (
@@ -17,6 +17,10 @@ ON "clerk" (
 CREATE INDEX "clerk_create_time"
 ON "clerk" (
   "create_time" DESC
+);
+CREATE INDEX "clerk_hash"
+ON "clerk" (
+  "hash" ASC
 );
 CREATE INDEX "clerk_is_delete"
 ON "clerk" (
@@ -35,11 +39,6 @@ ON "clerk" (
   "update_time" DESC
 );
 
-CREATE UNIQUE INDEX "clerk_hash"
-ON "clerk" (
-  "hash" ASC
-);
-
 CREATE TABLE "clerk_text" (
   "clerk_id" INTEGER NOT NULL,
   "text_content" TEXT NOT NULL,
@@ -50,6 +49,18 @@ CREATE TABLE "clerk_text" (
 CREATE UNIQUE INDEX "clerk_text_text_context"
 ON "clerk_text" (
   "text_content" ASC
+);
+
+CREATE TABLE "clerk_file" (
+  "clerk_id" INTEGER NOT NULL,
+  "file_content" TEXT NOT NULL,
+  PRIMARY KEY ("clerk_id"),
+  CONSTRAINT "clerk_file" FOREIGN KEY ("clerk_id") REFERENCES "clerk" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+);
+
+CREATE UNIQUE INDEX "clerk_file_file_content"
+ON "clerk_file" (
+  "file_content" ASC
 );
 
 CREATE TABLE "clerk_image" (

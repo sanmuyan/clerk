@@ -189,5 +189,5 @@ const start = () => {
   // 启动时清理历史数据
   clearHistoryData().then()
   // 监听并处理剪贴板变化
-  startWatch(500, exiting)
+  startWatch(100, exiting)
 }
