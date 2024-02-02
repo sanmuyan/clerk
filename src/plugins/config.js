@@ -1,7 +1,25 @@
 import { app, dialog } from 'electron'
 import fs from 'fs'
-import { getUserConfig } from '@/utils/config'
 import { initLogger, logger } from '@/plugins/logger'
+
+let configFile = ''
+const getUserConfig = (config) => {
+  if (!fs.existsSync(config.user_config_path)) {
+    fs.mkdirSync(config.user_config_path)
+  }
+  const argv = process.argv.filter(arg => arg.includes('--config='))
+  if (argv.length === 1) {
+    configFile = argv[0].split('=')[1]
+  } else {
+    configFile = config.user_config_path + '/config.json'
+    if (!fs.existsSync(configFile)) {
+      logger.warn('配置文件不存在, 将使用默认配置文件')
+      fs.copyFileSync(config.resources_path + '/config-example.json', configFile)
+    }
+  }
+
+  return JSON.parse(fs.readFileSync(configFile, 'utf8'))
+}
 
 export const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -64,7 +82,7 @@ export const initConfig = () => {
     try {
       config.window = JSON.parse(fs.readFileSync(config.window_config_file, 'utf8'))
     } catch (e) {
-      logger.error('window.json 文件不存在')
+      logger.warn('window.json 文件不存在')
     }
     const userConfig = getUserConfig(config)
     for (const key in userConfig) {
@@ -78,3 +96,12 @@ export const initConfig = () => {
 
 // 初始化 logger
 initLogger(isDevelopment, 'info', `${resourcesPath}/app.log`)
+
+export const appConfig = (c) => {
+  config = c
+  fs.writeFile(configFile, JSON.stringify(config.user_config, null, 4), (err) => {
+    if (err) {
+      logger.error(`apply config failed: ${err}`)
+    }
+  })
+}

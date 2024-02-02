@@ -11,6 +11,7 @@ import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { startWatch } from '@/services/clipboard'
 import { createWindow, win } from '@/services/win'
 import { logger } from '@/plugins/logger'
+import { handleShowAppSet } from '@/services/appset'
 
 const fs = require('fs')
 
@@ -22,10 +23,6 @@ if (!gotTheLock) {
 
 // 初始化配置
 initConfig()
-
-if (isDevelopment) {
-  config.user_config.blur_hide = false
-}
 
 // 启动WinTools
 try {
@@ -42,7 +39,7 @@ try {
 // 初始化数据库
 try {
   initDB(config).then((res) => {
-    logger.info(res)
+    logger.info(`数据库连接成功: ${res}`)
     start()
   }).catch((err) => {
     logger.error(`数据库初始化失败: ${err}`)
@@ -82,8 +79,8 @@ let exiting = false
 const handleExit = () => {
   logger.warn('进程退出')
   fs.writeFileSync(config.window_config_file, JSON.stringify(config.window, null, 2))
-  app.quit()
   exiting = true
+  app.quit()
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -124,6 +121,13 @@ app.on('ready', async () => {
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
     {
+      label: '设置',
+      type: 'normal',
+      click: () => {
+        handleShowAppSet()
+      }
+    },
+    {
       label: '退出',
       type: 'normal',
       click: () => {
@@ -157,7 +161,7 @@ app.on('ready', async () => {
 
   // 监听窗口失去焦点
   win.on('blur', () => {
-    if (config.user_config.blur_hide) {
+    if (config.user_config.blur_hide && !isDevelopment) {
       if (winShow) {
         handleWinDisplay()
       }

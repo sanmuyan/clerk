@@ -76,6 +76,13 @@
       >
       </content-details>
     </div>
+    <div>
+      <app-set
+        v-model="showAppSet"
+        :config="config"
+        @handleApplySet="handleApplySet">
+      </app-set>
+    </div>
   </div>
 </template>
 
@@ -85,6 +92,7 @@ import { getCurrentInstance, onMounted, ref, watch } from 'vue'
 import ContentDrawer from '@/components/ContentDrawer.vue'
 import ContentDetails from '@/components/ContentDetails.vue'
 import { logger } from '@/plugins/logger'
+import AppSet from '@/components/AppSet.vue'
 
 const tableData = ref([])
 const inputQuery = ref('')
@@ -102,6 +110,7 @@ const mouseIsTable = ref(false)
 const isEnterControl = ref(false)
 const config = ref({})
 const typeSelect = ref('text')
+const showAppSet = ref(false)
 
 ipcRenderer.send('message-from-renderer', 'init')
 
@@ -230,6 +239,26 @@ const handleCopy = (row) => {
 const handleCopyHide = (row) => {
   handleCopy(row)
   ipcRenderer.send('message-from-renderer', 'hide_paste')
+}
+
+// 配置初始化
+const handleConfigInit = (initConfig) => {
+  if (initConfig) {
+    config.value = initConfig
+    pageSize.value = config.value.user_config.page_size
+    tableHeight.value = pageSize.value * 40
+    getTableData('reset')
+  }
+}
+
+// 处理设置页面
+const handleShowAppSet = () => {
+  showAppSet.value = !showAppSet.value
+}
+
+const handleApplySet = (newConfig) => {
+  handleConfigInit(newConfig)
+  ipcRenderer.send('message-from-renderer', 'applySet', JSON.stringify(newConfig))
 }
 
 // 查询框变化
@@ -497,16 +526,16 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
       getTableData('reset')
       break
     case 'init':
-      config.value = data
-      pageSize.value = config.value.user_config.page_size
-      tableHeight.value = pageSize.value * 40
-      getTableData()
+      handleConfigInit(data)
       break
     case 'queryData':
       handleTableData(data.data, data.action)
       break
     case 'listData':
       handleTableData(data.data, data.action)
+      break
+    case 'showAppSet':
+      handleShowAppSet()
       break
   }
 })

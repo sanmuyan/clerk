@@ -6,34 +6,40 @@ import { logger } from '@/plugins/logger'
 const sqlite = sqlite3.verbose()
 let db = null
 
+const enableForeignKeys = () => {
+  return new Promise((resolve, reject) => {
+    const foreignKeysSql = 'PRAGMA foreign_keys = ON'
+    logger.debug(`initDBForeignKeysSQL: ${foreignKeysSql}`)
+    db.get(foreignKeysSql, (err, res) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
 export const initDB = (config) => {
   db = new sqlite.Database(config.user_config.db_file)
 
   return new Promise((resolve, reject) => {
     const checkSql = `SELECT COUNT(*) AS count FROM ${DB_MAIN_TABLE_NAME}`
     logger.debug(`initDBCheckSQL: ${checkSql}`)
-    let msg = ''
     db.run(checkSql, (err) => {
       if (err) {
         db.exec(config.init_sql, (err) => {
           if (err) {
             reject(err)
           } else {
-            msg = '数据库初始化成功'
+            logger.warn('数据库初始化成功')
+            enableForeignKeys().then(resolve).catch(err => {
+              reject(err)
+            })
           }
         })
       } else {
-        msg = '数据库连接成功'
+        enableForeignKeys().then(resolve).catch(reject)
       }
-      const foreignKeysSql = 'PRAGMA foreign_keys = ON'
-      logger.debug(`initDBForeignKeysSQL: ${foreignKeysSql}`)
-      db.get(foreignKeysSql, (err, res) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(msg)
-        }
-      })
     })
   })
 }
@@ -65,9 +71,7 @@ const getContentWithRow = (row) => {
           if (row.collect !== 'y') {
             deleteData(row.id).then(() => {
               reject(new Error(`content not found: ${row.id}, ${row.type}`))
-            }).catch(err => {
-              reject(err)
-            })
+            }).catch(reject)
           }
         }
       }
@@ -167,9 +171,7 @@ const listDataWithSql = (sql, countSql, page) => {
             data: rows,
             count: r.count
           })
-        }).catch(err => {
-          reject(err)
-        })
+        }).catch(reject)
       }
     })
   })
@@ -271,11 +273,7 @@ export const updateCollect = (id, collect) => {
       if (err) {
         reject(err)
       } else {
-        updateUpdateTime(id).then(() => {
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
+        updateUpdateTime(id).then(resolve).catch(reject)
       }
     })
   })
@@ -289,11 +287,7 @@ export const updateRemarks = (id, remarks) => {
       if (err) {
         reject(err)
       } else {
-        updateUpdateTime(id).then(() => {
-          resolve()
-        }).catch(err => {
-          reject(err)
-        })
+        updateUpdateTime(id).then(resolve).catch(reject)
       }
     })
   })
@@ -303,6 +297,20 @@ export const vacuumDB = () => {
   return new Promise((resolve, reject) => {
     const sql = 'VACUUM'
     logger.debug(`vacuumSQL: ${sql}`)
+    db.run(sql, (err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+export const restData = () => {
+  return new Promise((resolve, reject) => {
+    const sql = `DELETE FROM ${DB_MAIN_TABLE_NAME}`
+    logger.debug(`resetDataSQL: ${sql}`)
     db.run(sql, (err) => {
       if (err) {
         reject(err)

@@ -1,7 +1,7 @@
-import { config } from '@/plugins/config'
+import { appConfig, config } from '@/plugins/config'
 import { clipboard, nativeImage } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
-import { deleteData, listData, queryData, updateCollect, updateRemarks } from '@/plugins/sqlite'
+import { deleteData, listData, queryData, restData, updateCollect, updateRemarks } from '@/plugins/sqlite'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
@@ -69,6 +69,17 @@ export const handleRendererMessage = (event, arg, data) => {
       updateRemarks(data.id, data.remarks).then(() => {
         win.webContents.send('message-from-main', 'reset')
       })
+      break
+    case 'applySet':
+      logger.debug('applySet')
+      appConfig(JSON.parse(data))
+      break
+    case 'resetData':
+      logger.warn('resetData')
+      restData().catch(err => {
+        logger.error(`resetData failed: ${err}`)
+      })
+      win.webContents.send('message-from-main', 'init', config)
       break
   }
 }
