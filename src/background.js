@@ -121,14 +121,14 @@ app.on('ready', async () => {
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '设置',
+      label: '    设置    ',
       type: 'normal',
       click: () => {
         handleShowAppSet()
       }
     },
     {
-      label: '退出',
+      label: '    退出    ',
       type: 'normal',
       click: () => {
         handleExit()

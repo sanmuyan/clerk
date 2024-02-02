@@ -1,8 +1,8 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import '@/styles/index.scss'
 import installElementPlus from './plugins/element'
 import installHljs from './plugins/hljs'
+import '@/styles/index.scss'
 
 const app = createApp(App)
 

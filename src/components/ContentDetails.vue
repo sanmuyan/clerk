@@ -1,5 +1,5 @@
 <template>
-  <el-card class="card-container">
+  <el-card class="card-container" shadow="never">
     <template #header>
           <span style="display: block">
             <el-tooltip placement="top" effect="dark">
@@ -18,7 +18,18 @@
                        size="small"></el-button>
             <el-button v-else @click="handleCollect" round :icon="Star" type="default"
                        size="small"></el-button>
-            <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
+            <el-popover :visible="showRemarks" trigger="click" placement="top" width="50%">
+              <div style="margin-top: 10px;">
+                <el-input v-model="remarksData" size="small"></el-input>
+              </div>
+              <div style="margin-top: 15px; text-align: right">
+                <el-button size="small" text @click="handleRemarks">取消</el-button>
+                <el-button size="small" type="primary" @click="handleUpdateRemarks">应用</el-button>
+              </div>
+              <template #reference>
+                  <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
+              </template>
+            </el-popover>
             <el-button @click="handleDelete" round :icon="Delete" size="small"></el-button>
             <el-button @click="handleFull" round :icon="FullScreen" size="small"></el-button>
           </span>
@@ -43,28 +54,12 @@
         </el-scrollbar>
       </el-container>
     </el-container>
-    <el-dialog
-      v-model="showRemarks"
-      title="编辑备注"
-      width="80%"
-    >
-      <span>
-        <el-input v-model="remarksData"></el-input>
-      </span>
-      <template #footer>
-      <span class="dialog-footer">
-        <el-button type="primary" @click="handleUpdateRemarks">
-          确定
-        </el-button>
-      </span>
-      </template>
-    </el-dialog>
   </el-card>
 </template>
 
 <script setup>
-import { defineEmits, defineProps, onMounted, ref } from 'vue'
-import { CopyDocument, Delete, FullScreen, Edit, Star } from '@element-plus/icons-vue'
+import { defineEmits, defineProps, onMounted, ref, watch } from 'vue'
+import { CopyDocument, Delete, Edit, FullScreen, Star } from '@element-plus/icons-vue'
 import { ipcRenderer } from 'electron'
 
 const contentHeight = ref('100px')
@@ -77,12 +72,16 @@ const props = defineProps({
   detailsType: {
     type: String,
     required: true
+  },
+  config: {
+    type: Object,
+    required: true
   }
 })
 
 const cardHeight = ref('100%')
 
-const emit = defineEmits(['handleCopy', 'handleDelete', 'update:rowData'])
+const emit = defineEmits(['handleCopy', 'handleDelete', 'update:rowData', 'handleFull'])
 
 const remarksData = ref('')
 
@@ -132,8 +131,15 @@ const handleCollect = () => {
 
 const handleResize = () => {
   if (props.detailsType === 'main') {
-    cardHeight.value = (window.innerHeight - 455) + 'px'
-    contentHeight.value = (window.innerHeight - 555) + 'px'
+    if (props.config.user_config) {
+      const tableHeight = 40 * props.config.user_config.page_size
+      const otherHeight = 55
+      cardHeight.value = (window.innerHeight - (tableHeight + otherHeight)) + 'px'
+      contentHeight.value = (window.innerHeight - (tableHeight + otherHeight + 100)) + 'px'
+    } else {
+      cardHeight.value = (window.innerHeight - 455) + 'px'
+      contentHeight.value = (cardHeight.value - 555) + 'px'
+    }
   } else {
     contentHeight.value = (window.innerHeight - 100) + 'px'
   }
@@ -145,12 +151,19 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
+watch(() => props.config, (val) => {
+  if (val) {
+    handleResize()
+  }
+})
+
 </script>
 
 <style scoped lang="scss">
 .card-container {
   width: 100%;
   height: v-bind(cardHeight);
+  border: none;
 
   .content-container {
     max-height: v-bind(contentHeight);

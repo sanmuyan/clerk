@@ -1,25 +1,27 @@
 <template>
-  <el-drawer
-    :with-header="false"
-    :model-value="modelValue"
-    destroy-on-close
-    :lock-scroll="false"
-    direction="btt"
-    :show-close="false"
-    size="100%"
-    @dblclick="handleCopyHide"
-    @close="closed()"
-    class="drawer-container"
-  >
-    <content-details
-      @handleCopy="handleCopy"
-      @handleDelete="handleDelete"
-      @handleFull="handleFull"
-      :row-data="rowData"
-      detailsType="drawer"
+  <div class="drawer-container">
+    <el-drawer
+      :with-header="false"
+      :model-value="modelValue"
+      destroy-on-close
+      :lock-scroll="false"
+      direction="btt"
+      :show-close="false"
+      size="100%"
+      @dblclick="handleCopyHide"
+      @close="closed()"
     >
-    </content-details>
-  </el-drawer>
+      <content-details
+        @handleCopy="handleCopy"
+        @handleDelete="handleDelete"
+        @handleFull="handleFull"
+        :row-data="rowData"
+        detailsType="drawer"
+        :config="config"
+      >
+      </content-details>
+    </el-drawer>
+  </div>
 </template>
 
 <script setup>
@@ -34,10 +36,14 @@ const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false
+  },
+  config: {
+    type: Object,
+    required: true
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'handleCopyHide', 'handleCopy', 'handleDelete'])
+const emit = defineEmits(['update:modelValue', 'handleCopyHide', 'handleCopy', 'handleDelete', 'handleFull'])
 const closed = () => {
   emit('update:modelValue', false)
 }
@@ -62,6 +68,8 @@ const handleFull = () => {
 
 <style lang="scss" scoped>
 .drawer-container {
-  background: #f3f2f1;
+  :deep .el-drawer__body {
+    padding: 0;
+  }
 }
 </style>

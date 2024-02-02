@@ -26,7 +26,7 @@
       </el-input>
     </div>
     <div>
-      <el-card body-style="padding: 0;" class="card-container">
+      <el-card body-style="padding: 0;" class="card-container" shadow="never">
         <el-table
           :height="tableHeight"
           :show-header="false"
@@ -64,6 +64,7 @@
         @handleCopy="handleCopy"
         @handleDelete="handleDelete"
         @handleFull="handleShowDrawer"
+        :config="config"
       ></content-drawer>
     </div>
     <div class="content-details">
@@ -73,6 +74,7 @@
         @handleFull="handleShowDrawer"
         :rowData="nowRowData"
         detailsType="main"
+        :config="config"
       >
       </content-details>
     </div>
@@ -253,7 +255,7 @@ const handleConfigInit = (initConfig) => {
 
 // 处理设置页面
 const handleShowAppSet = () => {
-  showAppSet.value = !showAppSet.value
+  showAppSet.value = true
 }
 
 const handleApplySet = (newConfig) => {
@@ -550,6 +552,7 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
     -webkit-app-region: drag;
     width: 100%;
     height: 25px;
+    background: #f3f2f1;;
   }
 
   .search-box {
@@ -557,6 +560,7 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
   }
 
   .card-container {
+    border: none;
     .el-table :deep {
       .el-table__cell {
         padding: 8px;
