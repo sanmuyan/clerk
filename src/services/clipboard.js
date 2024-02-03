@@ -133,5 +133,5 @@ export const startWatch = (exiting) => {
     if (config.user_config.enable_image) {
       watchImage()
     }
-  }, 1000)
+  }, config.user_config.watch_interval)
 }

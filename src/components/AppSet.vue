@@ -23,6 +23,7 @@
         </div>
         <div class="app-set-input">
           <div class="app-set-input-des">
+            <div>监听间隔：</div>
             <div>显示数量：</div>
             <div>保留条数：</div>
             <div>保留时间：</div>
@@ -32,9 +33,14 @@
             <div>重置数据：</div>
           </div>
           <div class="app-set-input-item">
+            <el-input v-model.number="setConfig.user_config.watch_interval" type="number" style="width: 100px">
+              <template #suffix>ms</template>
+            </el-input>
             <el-input v-model.number="setConfig.user_config.page_size" type="number" style="width: 100px"></el-input>
             <el-input v-model.number="setConfig.user_config.max_number" type="number" style="width: 100px"></el-input>
-            <el-input v-model.number="setConfig.user_config.max_time" type="number" style="width: 100px"></el-input>
+            <el-input v-model.number="setConfig.user_config.max_time" type="number" style="width: 100px">
+              <template #suffix>s</template>
+            </el-input>
             <el-input v-model.number="setConfig.user_config.win_tools_port" type="number"
                       style="width: 100px"></el-input>
             <el-input v-model="setConfig.user_config.shortcut_keys" type="text" style="width: 100px"></el-input>
@@ -135,7 +141,9 @@ watch(() => props.config, (val) => {
         .el-input :deep .el-input__inner {
           --el-input-inner-height: 21px;
         }
-
+        :deep .el-input__suffix-inner {
+          height: 21px;
+        }
         .el-button :deep {
           height: 21px;
         }
