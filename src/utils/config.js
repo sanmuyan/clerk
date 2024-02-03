@@ -9,7 +9,7 @@ export const verificationConfig = (config) => {
     config.user_config.max_time = 0
   }
   if (config.user_config.watch_interval < 100) {
-    config.user_config.watch_interval = 0
+    config.user_config.watch_interval = 100
   }
   if (config.user_config.page_size < 1 || config.user_config.page_size > 20) {
     config.user_config.page_size = 10

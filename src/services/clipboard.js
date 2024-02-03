@@ -119,19 +119,19 @@ export const watchFile = () => {
   }
 }
 
-export const startWatch = (exiting) => {
-  const si = setInterval(() => {
-    if (exiting) {
-      clearInterval(si)
-    }
-    if (config.user_config.enable_text) {
-      watchText()
-    }
-    if (config.user_config.enable_file) {
-      watchFile()
-    }
-    if (config.user_config.enable_image) {
-      watchImage()
-    }
-  }, config.user_config.watch_interval)
+export const startWatch = (interval) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      if (config.user_config.enable_text) {
+        watchText()
+      }
+      if (config.user_config.enable_file) {
+        watchFile()
+      }
+      if (config.user_config.enable_image) {
+        watchImage()
+      }
+      resolve()
+    }, interval)
+  })
 }

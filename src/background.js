@@ -41,7 +41,7 @@ try {
 try {
   initDB(config).then((res) => {
     logger.info(`数据库连接成功: ${res}`)
-    start()
+    start().then()
   }).catch((err) => {
     logger.error(`数据库初始化失败: ${err}`)
   })
@@ -190,9 +190,14 @@ ipcMain.on('message-from-renderer', (event, arg, data) => {
   handleRendererMessage(event, arg, data)
 })
 
-const start = () => {
+const start = async () => {
   // 启动时清理历史数据
-  clearHistoryData().then()
+  await clearHistoryData().then()
   // 监听并处理剪贴板变化
-  startWatch(exiting)
+  while (true) {
+    if (exiting) {
+      break
+    }
+    await startWatch(config.user_config.watch_interval)
+  }
 }
