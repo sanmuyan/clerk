@@ -51,7 +51,7 @@ const clearPrevious = (type) => {
   }
 }
 
-const watchText = () => {
+export const watchText = () => {
   const type = 'text'
   const currentText = clipboard.readText()
   // 文本不能超过1MB
@@ -67,27 +67,29 @@ const watchText = () => {
   clearPrevious(type)
 }
 
-const watchImage = () => {
+export const watchImage = () => {
   const type = 'image'
   const image = clipboard.readImage()
   if (image.isEmpty()) {
     return
   }
-  const imageContent = image.toPNG()
-  const currentImageHash = getHash(imageContent)
+  const imageBit = image.toBitmap()
   // 图片不能大于10MB
-  if (imageContent.length > 10485760) {
+  if (imageBit.length > 10485760) {
     return
   }
-
+  const currentImageHash = getHash(imageBit)
   if (currentImageHash === previousImageHash) {
     return
   }
+  const imageContent = image.toPNG()
   previousImageHash = currentImageHash
-  handleClipboard(imageContent, type, currentImageHash)
+  handleClipboard(imageContent, type, getHash(imageContent))
   clearPrevious(type)
 }
-const watchFile = () => {
+
+export const watchFile = () => {
+  const type = 'file'
   if (winToolsReady) {
     winToolsClient.GetFileDropList({}, (err, res) => {
       if (err) {
@@ -95,7 +97,6 @@ const watchFile = () => {
         return
       }
       const fileDropList = res.FileDropList
-      const type = 'file'
       if (Object.keys(fileDropList).length === 0) {
         return
       }
@@ -118,7 +119,7 @@ const watchFile = () => {
   }
 }
 
-export const startWatch = (interval, exiting) => {
+export const startWatch = (exiting) => {
   const si = setInterval(() => {
     if (exiting) {
       clearInterval(si)
@@ -126,11 +127,11 @@ export const startWatch = (interval, exiting) => {
     if (config.user_config.enable_text) {
       watchText()
     }
-    if (config.user_config.enable_image) {
-      watchImage()
-    }
     if (config.user_config.enable_file) {
       watchFile()
     }
-  }, interval)
+    if (config.user_config.enable_image) {
+      watchImage()
+    }
+  }, 1000)
 }

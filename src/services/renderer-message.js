@@ -5,6 +5,7 @@ import { deleteData, listData, queryData, restData, updateCollect, updateRemarks
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
+import { watchFile, watchImage, watchText } from '@/services/clipboard'
 
 export const handleRendererMessage = (event, arg, data) => {
   switch (arg) {
@@ -20,10 +21,12 @@ export const handleRendererMessage = (event, arg, data) => {
         case 'text':
           logger.debug('writeClipboardText')
           clipboard.writeText(data.content)
+          watchText()
           break
         case 'image':
           logger.debug('writeClipboardImage')
           clipboard.writeImage(nativeImage.createFromDataURL(data.content))
+          watchImage()
           break
         case 'file':
           logger.debug('setFileDropList')
@@ -31,6 +34,8 @@ export const handleRendererMessage = (event, arg, data) => {
             winToolsClient.SetFileDropList({ FileDropList: JSON.parse(data.content) }, (err, res) => {
               if (err) {
                 logger.error(`setFileDropList failed: ${err}`)
+              } else {
+                watchFile()
               }
             })
           }
