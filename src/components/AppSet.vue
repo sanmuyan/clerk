@@ -63,6 +63,7 @@
 <script setup>
 import { defineEmits, defineProps, ref, watch } from 'vue'
 import { ipcRenderer } from 'electron'
+import { verificationConfig } from '@/utils/config'
 
 const props = defineProps({
   config: {
@@ -88,7 +89,7 @@ const handleOpen = () => {
 }
 const handleApplySet = () => {
   handleClose()
-  emit('handleApplySet', setConfig.value)
+  emit('handleApplySet', verificationConfig(setConfig.value))
 }
 
 const handleRestData = () => {

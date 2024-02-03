@@ -1,6 +1,7 @@
 import { app, dialog } from 'electron'
 import fs from 'fs'
 import { initLogger, logger } from '@/plugins/logger'
+import { verificationConfig } from '@/utils/config'
 
 let configFile = ''
 const getUserConfig = (config) => {
@@ -87,8 +88,11 @@ export const initConfig = () => {
     }
     const userConfig = getUserConfig(config)
     for (const key in userConfig) {
-      config.user_config[key] = userConfig[key]
+      if (key in config.user_config) {
+        config.user_config[key] = userConfig[key]
+      }
     }
+    verificationConfig(config)
   } catch (e) {
     dialog.showErrorBox('错误', '生成配置失败' + e.toString())
     app.quit()
