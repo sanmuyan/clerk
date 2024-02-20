@@ -62,7 +62,7 @@ export const handleRendererMessage = (event, arg, data) => {
       break
     case 'delete':
       deleteData(data.id).then(() => {
-        win.webContents.send('message-from-main', 'reset')
+        win.webContents.send('message-from-main', 'resetKeepPageNumber')
       })
       break
     case 'updateCollect':

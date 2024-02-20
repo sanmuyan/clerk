@@ -192,6 +192,14 @@ const handleTableData = (data, action) => {
 }
 const getTableData = (action) => {
   switch (action) {
+    case 'resetKeepPageNumber':
+      if (tableData.value.length === 0 && pageNumber.value > 1) {
+        pageNumber.value = pageNumber.value - 1
+      }
+      nowCount.value = 0
+      totalCount.value = 0
+      tableData.value = []
+      break
     case 'reset':
       pageNumber.value = 1
       nowCount.value = 0
@@ -527,6 +535,9 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
       // inputQuery.value = null
       getTableData('reset')
       break
+    case 'resetKeepPageNumber':
+      getTableData('resetKeepPageNumber')
+      break
     case 'init':
       handleConfigInit(data)
       break
@@ -561,6 +572,7 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
 
   .card-container {
     border: none;
+
     .el-table :deep {
       .el-table__cell {
         padding: 8px;
