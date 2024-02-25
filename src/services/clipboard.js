@@ -6,9 +6,9 @@ import { getHash } from '@/plugins/hash'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
 
-const handleClipboard = (currentContent, type, currentHash) => {
+const handleClipboard = async (currentContent, type, currentHash) => {
   const timestamp = Math.floor(Date.now() / 1000)
-  getClipboardWithHash(currentHash, type).then(async (res) => {
+  await getClipboardWithHash(currentHash, type).then(async (res) => {
     if (res) {
       logger.info(`updateClipboard: id=${res.id} type=${type} hash=${currentHash}`)
       await updateUpdateTime(res.id, timestamp).catch(err => {
@@ -51,7 +51,7 @@ const clearPrevious = (type) => {
   }
 }
 
-export const watchText = () => {
+export const watchText = async () => {
   const type = 'text'
   const currentText = clipboard.readText()
   // 文本不能超过1MB
@@ -63,11 +63,11 @@ export const watchText = () => {
     return
   }
   previousTextHash = currentTextHash
-  handleClipboard(currentText, type, currentTextHash)
+  await handleClipboard(currentText, type, currentTextHash)
   clearPrevious(type)
 }
 
-export const watchImage = () => {
+export const watchImage = async () => {
   const type = 'image'
   const image = clipboard.readImage()
   if (image.isEmpty()) {
@@ -84,14 +84,14 @@ export const watchImage = () => {
   }
   const imageContent = image.toPNG()
   previousImageHash = currentImageHash
-  handleClipboard(imageContent, type, getHash(imageContent))
+  await handleClipboard(imageContent, type, getHash(imageContent))
   clearPrevious(type)
 }
 
 export const watchFile = () => {
   const type = 'file'
   if (winToolsReady) {
-    winToolsClient.GetFileDropList({}, (err, res) => {
+    winToolsClient.GetFileDropList({}, async (err, res) => {
       if (err) {
         logger.error(`getFileDropList: ${err}`)
         return
@@ -113,7 +113,7 @@ export const watchFile = () => {
         return
       }
       previousFileHash = currentFileHash
-      handleClipboard(currentFile, type, currentFileHash)
+      await handleClipboard(currentFile, type, currentFileHash)
       clearPrevious(type)
     })
   }
@@ -121,15 +121,15 @@ export const watchFile = () => {
 
 export const startWatch = (interval) => {
   return new Promise((resolve) => {
-    setTimeout(() => {
+    setTimeout(async () => {
       if (config.user_config.enable_text) {
-        watchText()
+        await watchText()
       }
       if (config.user_config.enable_file) {
-        watchFile()
+        await watchFile()
       }
       if (config.user_config.enable_image) {
-        watchImage()
+        await watchImage()
       }
       resolve()
     }, interval)
