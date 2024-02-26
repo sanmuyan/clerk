@@ -2,28 +2,39 @@ import { config, isDevelopment } from '@/plugins/config'
 import { getClient } from '@/plugins/wintools'
 import { spawn } from 'child_process'
 import { logger } from '@/plugins/logger'
+import { dialog } from 'electron'
 
 export let winToolsReady = false
 export let winToolsClient = {
-  SetForegroundWindow: () => {},
-  GetForegroundWindow: () => {},
-  Ping: () => {},
-  GetFileDropList: () => {},
-  SetFileDropList: () => {}
+  SetForegroundWindow: () => {
+  },
+  GetForegroundWindow: () => {
+  },
+  Ping: () => {
+  },
+  GetFileDropList: () => {
+  },
+  SetFileDropList: () => {
+  }
 }
 
 export const winToolsPing = () => {
   winToolsClient.Ping({}, (err, res) => {
     if (err) {
-      logger.debug('winTools 服务连接失败')
+      if (winToolsReady) {
+        logger.debug('winTools 服务连接失败')
+      }
       winToolsReady = false
     } else {
-      logger.debug('winTools 服务连接成功')
+      if (!winToolsReady) {
+        logger.debug('winTools 服务连接成功')
+      }
       winToolsReady = true
     }
   })
 }
 
+let winToolsExitCount = 0
 export const startWinTools = () => {
   if (isDevelopment) {
     winToolsClient = getClient(config)
@@ -42,7 +53,13 @@ export const startWinTools = () => {
     winToolsRunning.on('exit', (code, signal) => {
       logger.warn(`winTools 运行退出: ${code} ${signal}`)
       winToolsReady = false
-      startWinTools()
+      if (winToolsExitCount === 0) {
+        dialog.showErrorBox('错误', 'WinTools 进程退出')
+      }
+      if (winToolsExitCount < 3) {
+        startWinTools()
+      }
+      winToolsExitCount++
     })
   }
 }

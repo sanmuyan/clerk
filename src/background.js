@@ -21,35 +21,6 @@ if (!gotTheLock) {
   app.quit()
 }
 
-// 初始化配置
-initConfig()
-
-// 启动WinTools
-try {
-  if (config.user_config.enable_win_tools) {
-    startWinTools()
-    winToolsPing()
-    setInterval(() => {
-      winToolsPing()
-    }, 10000)
-  }
-} catch (e) {
-  dialog.showErrorBox('错误', 'WinTools服务连接失败' + e.toString())
-}
-
-// 初始化数据库
-try {
-  initDB(config).then((res) => {
-    logger.info(`数据库连接成功: ${res}`)
-    start().then()
-  }).catch((err) => {
-    logger.error(`数据库初始化失败: ${err}`)
-  })
-} catch (e) {
-  dialog.showErrorBox('错误', '数据库初始化失败' + e.toString())
-  app.quit()
-}
-
 // 登录设置
 if (isDevelopment) {
   app.setLoginItemSettings({
@@ -62,6 +33,27 @@ if (isDevelopment) {
     args: []
   })
 }
+
+// 初始化配置
+initConfig()
+
+// 启动WinTools
+if (config.user_config.enable_win_tools) {
+  startWinTools()
+  setInterval(() => {
+    winToolsPing()
+  }, 1000)
+}
+
+// 初始化数据库
+initDB(config).then((res) => {
+  logger.info('数据库初始化成功')
+  start().then()
+}).catch((err) => {
+  logger.error(`数据库初始化失败: ${err}`)
+  dialog.showErrorBox('错误', '数据库初始化失败')
+  app.quit()
+})
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -79,7 +71,6 @@ let exiting = false
 
 const handleExit = () => {
   logger.warn('进程退出')
-  fs.writeFileSync(config.window_config_file, JSON.stringify(config.window, null, 2))
   exiting = true
   app.quit()
 }
@@ -153,6 +144,13 @@ app.on('ready', async () => {
   win.on('resize', () => {
     config.window.width = win.getSize()[0]
     config.window.height = win.getSize()[1]
+    fs.writeFile(config.window_config_file, JSON.stringify(config.window, null, 2), (err) => {
+      if (err) {
+        logger.error(`保存窗口尺寸失败: ${err}`)
+      } else {
+        logger.silly('窗口尺寸已保存')
+      }
+    })
   })
 
   // 监听窗口最小化

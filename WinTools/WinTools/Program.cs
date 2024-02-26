@@ -76,10 +76,17 @@ class Services : GrpcServices.GrpcServicesBase
     {
         Thread thread = new Thread(() =>
         {
-            var fileDropList = Clipboard.GetFileDropList();
-            foreach (var f in fileDropList)
+            try
             {
-                request.FileDropList.Add(f);
+                var fileDropList = Clipboard.GetFileDropList();
+                foreach (var f in fileDropList)
+                {
+                    request.FileDropList.Add(f);
+                }
+            }catch (Exception e)
+            {
+                // 用户未进入桌面前获取文件剪切板会抛异常
+                // Console.WriteLine("GetFileDropList error:" + e.Message);
             }
         });
         thread.SetApartmentState(ApartmentState.STA);
