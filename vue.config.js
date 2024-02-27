@@ -13,7 +13,7 @@ module.exports = defineConfig({
           from: 'resources',
           to: './'
         }, {
-          from: 'WinTools/WinTools/bin/Release/net7.0',
+          from: 'WinTools/WinTools/bin/Release/net8.0',
           to: './WinTools'
         }
         ],

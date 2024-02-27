@@ -41,9 +41,6 @@ logger.info(`userConfigPath=${userConfigPath}`)
 let winToolsFile = null
 if (process.platform === 'win32') {
   winToolsFile = resourcesPath + '/WinTools/win-x64/WinTools.exe'
-  if (isDevelopment) {
-    winToolsFile = appPath + '/WinTools/WinTools/bin/Release/net7.0/win-x64/WinTools.exe'
-  }
 }
 
 export let config = {}

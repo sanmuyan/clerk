@@ -107,7 +107,7 @@ yarn run electron:build
 - 对文件类型的剪切板支持
 
 `WinTools` 基于 `.NET Desktop`
-框架需要安装 `.NET Desktop Runtime` [下载地址](https://download.visualstudio.microsoft.com/download/pr/dffb1939-cef1-4db3-a579-5475a3061cdd/578b208733c914c7b7357f6baa4ecfd6/windowsdesktop-runtime-7.0.5-win-x64.exe)
+框架需要安装 `.NET Desktop Runtime` [下载地址](https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.2-windows-x64-installer)
 
 ####
 
