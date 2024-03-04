@@ -18,13 +18,13 @@
                        size="small"></el-button>
             <el-button v-else @click="handleCollect" round :icon="Star" type="default"
                        size="small"></el-button>
-            <el-popover :visible="showRemarks" trigger="click" placement="top" width="50%">
+            <el-popover title="编辑备注" :visible="showRemarks" trigger="click" placement="top" width="50%">
               <div style="margin-top: 10px;">
                 <el-input v-model="remarksData" size="small"></el-input>
               </div>
-              <div style="margin-top: 15px; text-align: right">
-                <el-button size="small" text @click="handleRemarks">取消</el-button>
-                <el-button size="small" type="primary" @click="handleUpdateRemarks">应用</el-button>
+              <div style="margin-top: 15px; text-align: left">
+                <el-button size="small" type="primary" @click="handleUpdateRemarks">确定</el-button>
+                <el-button size="small" type="info" @click="handleRemarks">取消</el-button>
               </div>
               <template #reference>
                   <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
