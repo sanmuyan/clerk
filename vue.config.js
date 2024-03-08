@@ -8,18 +8,21 @@ module.exports = defineConfig({
       nodeIntegration: true,
       builderOptions: {
         productName: 'Clerk',
-        appId: 'com.clerk.app',
+        appId: 'com.sanmuyan.clerk',
         extraResources: [{
           from: 'resources',
           to: './'
-        }, {
-          from: 'WinTools/WinTools/bin/Release/net8.0',
-          to: './WinTools'
-        }
-        ],
+        }],
         win: {
           icon: './resources/logo.png',
-          artifactName: 'ClerkSetup.exe'
+          artifactName: 'ClerkSetup.exe',
+          legalTrademarks: 'sanmuyan',
+          extraResources: [
+            {
+              from: 'WinTools/WinTools/bin/Release/net8.0',
+              to: './WinTools'
+            }
+          ]
         }
       }
     }

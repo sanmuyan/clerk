@@ -1,6 +1,9 @@
 {
   "name": "clerk",
-  "version": "0.1.0",
+  "version": "0.4.0",
+  "description": "剪切板工具",
+  "author": "sanmuyan",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
