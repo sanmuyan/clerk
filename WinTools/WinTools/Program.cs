@@ -1,21 +1,13 @@
 ﻿using System.Collections.Specialized;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Text.Json;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
 using Grpc.Core;
 
 namespace WinTools;
 
-class Program
+static class Program
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = false,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder
-            .UnsafeRelaxedJsonEscaping, // 不转义非 ASCII 字符
-    };
-
     [STAThread]
     static void Main(string[] args)
     {
@@ -39,10 +31,11 @@ class Program
     }
 }
 
-class WindowTools
+static class WindowTools
 {
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
+
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
@@ -50,7 +43,7 @@ class WindowTools
 
 class Services : GrpcServices.GrpcServicesBase
 {
-    [SuppressMessage("Interoperability", "CA1416:验证平台兼容性")]
+    [SupportedOSPlatform("windows")]
     public override Task<Message> SetFileDropList(Message request, ServerCallContext context)
     {
         var filePaths = new StringCollection();
@@ -58,7 +51,7 @@ class Services : GrpcServices.GrpcServicesBase
         {
             filePaths.Add(f);
         }
-        
+
         if (filePaths.Count == 0)
         {
             return Task.FromResult(new Message() { Status = false });
@@ -71,7 +64,7 @@ class Services : GrpcServices.GrpcServicesBase
     }
 
 
-    [SuppressMessage("Interoperability", "CA1416:验证平台兼容性")]
+    [SupportedOSPlatform("windows")]
     public override Task<Message> GetFileDropList(Message request, ServerCallContext context)
     {
         Thread thread = new Thread(() =>
@@ -83,10 +76,10 @@ class Services : GrpcServices.GrpcServicesBase
                 {
                     request.FileDropList.Add(f);
                 }
-            }catch (Exception e)
+            }
+            catch (Exception)
             {
                 // 用户未进入桌面前获取文件剪切板会抛异常
-                // Console.WriteLine("GetFileDropList error:" + e.Message);
             }
         });
         thread.SetApartmentState(ApartmentState.STA);
@@ -105,6 +98,7 @@ class Services : GrpcServices.GrpcServicesBase
         });
     }
 
+    [SupportedOSPlatform("windows")]
     public override Task<Message> SetForegroundWindow(Message request, ServerCallContext context)
     {
         var result = WindowTools.SetForegroundWindow(request.ForegroundWindow);
@@ -117,6 +111,7 @@ class Services : GrpcServices.GrpcServicesBase
                 SendKeys.SendWait("^v");
             }
         }
+
         return Task.FromResult(new Message() { Status = result });
     }
 
