@@ -8,22 +8,28 @@ export let winShow = false
 export const handleWinPosition = () => {
   const cursorX = screen.getCursorScreenPoint().x
   const cursorY = screen.getCursorScreenPoint().y
-  const display = screen.getPrimaryDisplay()
+  const display = screen.getDisplayMatching({
+    x: cursorX,
+    y: cursorY,
+    width: 0,
+    height: 0
+  })
+  // const display = screen.getPrimaryDisplay()
 
   let winX = cursorX
   let winY = cursorY
-  if (cursorX + config.window.width > display.size.width) {
+  if (cursorX + config.window.width > display.workAreaSize.width) {
     // 默认会出现在鼠标右侧。如果鼠标位置+窗口宽度超过屏幕宽度，则窗口位置出现在鼠标左侧
     winX = cursorX - config.window.width
   } else {
     // 窗口往左移动确保鼠标在窗口内
     winX -= 50
   }
-  if (cursorY + config.window.height > display.size.height) {
+  if (cursorY + config.window.height > display.workAreaSize.height) {
     // 默认窗口顶部会出现在鼠标位置下部，如果鼠标位置+窗口高度超过屏幕高度，则窗口底部出现在屏幕最大高度点
-    winY = display.size.height - config.window.height
+    winY = display.workAreaSize.height - config.window.height
     // 减去任务栏高度
-    winY = winY - 50
+    // winY = winY - 50
   } else {
     // 窗口往上移动确保鼠标在窗口内
     if (cursorY > 20) {
@@ -36,9 +42,7 @@ export const handleWinPosition = () => {
 let foregroundWindow = null
 export const handleWinDisplay = (triggerPaste) => {
   if (winShow) {
-    logger.debug('winHide')
-    winShow = false
-    win.hide()
+    handleWinHide()
     if (winToolsReady) {
       logger.debug(`setForegroundWindow: ${foregroundWindow}`)
       const msg = {
@@ -69,9 +73,6 @@ export const handleWinDisplay = (triggerPaste) => {
     }
     win.webContents.send('message-from-main', 'reset')
   } else {
-    logger.debug('winShow')
-    winShow = true
-    handleWinPosition()
     if (winToolsReady) {
       winToolsClient.GetForegroundWindow({}, (err, res) => {
         if (err) {
@@ -80,10 +81,25 @@ export const handleWinDisplay = (triggerPaste) => {
           foregroundWindow = res.ForegroundWindow
           logger.debug(`setForegroundWindow: ${foregroundWindow}`)
         }
-        win.show()
+        handleWinShowing()
       })
     } else {
-      win.show()
+      handleWinShowing()
     }
   }
+}
+
+const handleWinHide = () => {
+  logger.debug('winHide')
+  winShow = false
+  win.setResizable(false)
+  win.hide()
+}
+
+const handleWinShowing = () => {
+  logger.debug('winShow')
+  winShow = true
+  handleWinPosition()
+  win.show()
+  win.setResizable(true)
 }

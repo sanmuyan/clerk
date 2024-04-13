@@ -142,15 +142,22 @@ app.on('ready', async () => {
 
   // 监听窗口尺寸变化
   win.on('resize', () => {
-    config.window.width = win.getSize()[0]
-    config.window.height = win.getSize()[1]
-    fs.writeFile(config.window_config_file, JSON.stringify(config.window, null, 2), (err) => {
-      if (err) {
-        logger.error(`保存窗口尺寸失败: ${err}`)
-      } else {
-        logger.silly('窗口尺寸已保存')
-      }
-    })
+    logger.debug(`窗口尺寸变化 ${win.getSize()}`)
+    const windowWidth = win.getSize()[0]
+    const windowHeight = win.getSize()[1]
+    if (win.isResizable()) {
+      config.window.width = windowWidth
+      config.window.height = windowHeight
+      fs.writeFile(config.window_config_file, JSON.stringify(config.window, null, 2), (err) => {
+        if (err) {
+          logger.error(`保存窗口尺寸失败: ${err}`)
+        } else {
+          logger.silly('窗口尺寸已保存')
+        }
+      })
+    } else {
+      logger.debug('不允许更改窗口尺寸')
+    }
   })
 
   // 监听窗口最小化
