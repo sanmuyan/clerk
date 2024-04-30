@@ -13,13 +13,19 @@
     >
       <div class="app-set-container">
         <div class="app-set-switch">
-          <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
-          <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
+          <div class="app-set-switch-item">
+            <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
+          </div>
+          <div class="app-set-switch-item">
+            <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
+          </div>
         </div>
         <div class="app-set-input">
           <div class="app-set-input-des">
@@ -113,10 +119,14 @@ watch(() => props.config, (val) => {
     margin-left: 10px;
 
     .app-set-switch {
-      margin-left: 20px;
-      display: flex;
-      flex-direction: column;
-      grid-gap: 5px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      .app-set-switch-item {
+        margin-left: 20px;
+        display: flex;
+        flex-direction: column;
+        grid-gap: 5px;
+      }
     }
 
     .app-set-input {
@@ -142,9 +152,11 @@ watch(() => props.config, (val) => {
         .el-input :deep .el-input__inner {
           --el-input-inner-height: 21px;
         }
+
         :deep .el-input__suffix-inner {
           height: 21px;
         }
+
         .el-button :deep {
           height: 21px;
         }

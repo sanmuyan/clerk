@@ -532,7 +532,12 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
       getTableData('reset')
       break
     case 'reset':
-      // inputQuery.value = null
+      if (config.value.user_config.reset_query_data) {
+        inputQuery.value = null
+      }
+      if (config.value.user_config.reset_type_select) {
+        typeSelect.value = 'text'
+      }
       getTableData('reset')
       break
     case 'resetKeepPageNumber':
