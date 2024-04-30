@@ -12,23 +12,26 @@
       title="设置"
     >
       <div class="app-set-container">
-        <div class="app-set-switch">
-          <div class="app-set-switch-item">
+        <div class="app-set-switch-container">
+          <div class="app-set-switch-container-item">
             <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
+          </div>
+          <div class="app-set-switch-container-item">
             <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
-          </div>
-          <div class="app-set-switch-item">
             <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
           </div>
         </div>
-        <div class="app-set-input">
-          <div class="app-set-input-des">
+        <div class="app-set-button-container">
+          <el-button @click="showDataManage = !showDataManage" type="primary">清理数据</el-button>
+        </div>
+        <div class="app-set-input-container">
+          <div class="app-set-input-container-des">
             <div>监听间隔：</div>
             <div>显示数量：</div>
             <div>保留条数：</div>
@@ -36,9 +39,8 @@
             <div>系统工具端口：</div>
             <div>快捷键：</div>
             <div>数据库文件：</div>
-            <div>重置数据：</div>
           </div>
-          <div class="app-set-input-item">
+          <div class="app-set-input-container-item">
             <el-input v-model.number="setConfig.user_config.watch_interval" type="number" style="width: 100px">
               <template #suffix>ms</template>
             </el-input>
@@ -51,18 +53,53 @@
                       style="width: 100px"></el-input>
             <el-input v-model="setConfig.user_config.shortcut_keys" type="text" style="width: 100px"></el-input>
             <el-input v-model="setConfig.user_config.db_file" type="text" style="width: 100px"></el-input>
-            <el-popconfirm title="将会删除所有数据" @confirm="handleRestData">
-              <template #reference>
-                <el-button type="warning">重置</el-button>
-              </template>
-            </el-popconfirm>
           </div>
         </div>
-        <div class="app-set-button">
+        <div class="app-set-main-button">
           <el-button @click="handleClose">取消</el-button>
           <el-button type="primary" @click="handleApplySet">应用</el-button>
         </div>
       </div>
+      <el-dialog
+        v-model="showDataManage"
+        title="清理数据"
+        width="80%"
+        :show-close="false"
+      >
+        <div class="app-set-clear-container">
+          <div class="app-set-clear-container-switch-item">
+            <el-checkbox v-model="isClearText">文本</el-checkbox>
+            <el-checkbox v-model="isClearImage">图片</el-checkbox>
+            <el-checkbox v-model="isClearFile">文件</el-checkbox>
+          </div>
+          <div class="app-set-clear-container-time-option">
+            <div class="app-set-clear-container-time-option-item">
+              <el-date-picker
+                v-model="clearBeforeTime"
+                placeholder="清理之前的数据"
+                :disabled="isDisableBeforeTime"
+                type="datetime">
+              </el-date-picker>
+            </div>
+            <div class="app-set-clear-container-time-option-item">
+              <el-date-picker
+                v-model="clearAfterTime"
+                placeholder="清理之后的数据"
+                :disabled="isDisableAfterTime"
+                type="datetime">
+              </el-date-picker>
+            </div>
+          </div>
+          <div class="app-set-clear-container-button-item">
+            <el-button @click="showDataManage = false" type="primary">取消</el-button>
+            <el-popconfirm title="将会删除所选数据" @confirm="handleClearHistoryData">
+              <template #reference>
+                <el-button :disabled="isDisableClearButton" type="warning">清理</el-button>
+              </template>
+            </el-popconfirm>
+          </div>
+        </div>
+      </el-dialog>
     </el-drawer>
   </div>
 </template>
@@ -82,6 +119,16 @@ const props = defineProps({
   }
 })
 
+const showDataManage = ref(false)
+const isClearText = ref(false)
+const isClearImage = ref(false)
+const isClearFile = ref(false)
+const isDisableClearButton = ref(true)
+const clearBeforeTime = ref(null)
+const clearAfterTime = ref(null)
+const isDisableBeforeTime = ref(false)
+const isDisableAfterTime = ref(false)
+
 const emit = defineEmits(['update:modelValue', 'handleApplySet'])
 
 const setConfig = ref(JSON.parse(JSON.stringify(props.config)))
@@ -98,8 +145,14 @@ const handleApplySet = () => {
   emit('handleApplySet', verificationConfig(setConfig.value))
 }
 
-const handleRestData = () => {
-  ipcRenderer.send('message-from-renderer', 'resetData')
+const handleClearHistoryData = () => {
+  ipcRenderer.send('message-from-renderer', 'clearHistoryData', {
+    isClearText: isClearText.value,
+    isClearImage: isClearImage.value,
+    isClearFile: isClearFile.value,
+    clearBeforeTime: clearBeforeTime.value ? new Date(clearBeforeTime.value).getTime() / 1000 : null,
+    clearAfterTime: clearAfterTime.value ? new Date(clearAfterTime.value).getTime() / 1000 : null
+  })
 }
 
 watch(() => props.config, (val) => {
@@ -108,6 +161,37 @@ watch(() => props.config, (val) => {
   }
 })
 
+watch(() => isClearText.value, (val) => {
+  if (val) {
+    isDisableClearButton.value = false
+  } else {
+    isDisableClearButton.value = !(isClearFile.value || isClearImage.value)
+  }
+})
+
+watch(() => isClearImage.value, (val) => {
+  if (val) {
+    isDisableClearButton.value = false
+  } else {
+    isDisableClearButton.value = !(isClearFile.value || isClearText.value)
+  }
+})
+
+watch(() => isClearFile.value, (val) => {
+  if (val) {
+    isDisableClearButton.value = false
+  } else {
+    isDisableClearButton.value = !(isClearText.value || isClearImage.value)
+  }
+})
+
+watch(() => clearAfterTime.value, (val) => {
+  isDisableBeforeTime.value = clearAfterTime.value !== null
+})
+
+watch(() => clearBeforeTime.value, (val) => {
+  isDisableAfterTime.value = clearBeforeTime.value !== null
+})
 </script>
 <style scoped lang="scss">
 .drawer-container {
@@ -115,13 +199,39 @@ watch(() => props.config, (val) => {
     padding: 0;
   }
 
+  .app-set-clear-container {
+    .app-set-clear-container-switch-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-gap: 10px;
+    }
+
+    .app-set-clear-container-time-option {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      grid-gap: 25px;
+
+      .app-set-clear-container-time-option-item {
+        display: flex;
+      }
+    }
+
+    .app-set-clear-container-button-item {
+      margin-top: 25px;
+      margin-right: 10px;
+      text-align: right;
+    }
+  }
+
   .app-set-container {
     margin-left: 10px;
 
-    .app-set-switch {
+    .app-set-switch-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      .app-set-switch-item {
+
+      .app-set-switch-container-item {
         margin-left: 20px;
         display: flex;
         flex-direction: column;
@@ -129,13 +239,25 @@ watch(() => props.config, (val) => {
       }
     }
 
-    .app-set-input {
+    .app-set-button-container {
+      margin-top: 30px;
+      margin-left: 22px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+
+      .el-button :deep {
+        height: 21px;
+        width: 40%;
+      }
+    }
+
+    .app-set-input-container {
       margin-top: 30px;
       display: grid;
       grid-template-columns: repeat(100, 100px);
       grid-gap: 10px;
 
-      .app-set-input-des {
+      .app-set-input-container-des {
         font-size: 14px;
         text-align: right;
         display: flex;
@@ -148,7 +270,7 @@ watch(() => props.config, (val) => {
         }
       }
 
-      .app-set-input-item {
+      .app-set-input-container-item {
         .el-input :deep .el-input__inner {
           --el-input-inner-height: 21px;
         }
@@ -168,9 +290,9 @@ watch(() => props.config, (val) => {
       }
     }
 
-    .app-set-button {
+    .app-set-main-button {
       margin-top: 30px;
-      margin-right: 20px;
+      margin-right: 15px;
       text-align: right;
     }
   }

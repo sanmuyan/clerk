@@ -307,10 +307,25 @@ export const vacuumDB = () => {
   })
 }
 
-export const restData = () => {
+export const clearHistoryData = (options) => {
   return new Promise((resolve, reject) => {
-    const sql = `DELETE FROM ${DB_MAIN_TABLE_NAME}`
-    logger.debug(`resetDataSQL: ${sql}`)
+    let sql = `DELETE FROM ${DB_MAIN_TABLE_NAME} WHERE collect != 'y'`
+    if (!options.isClearText) {
+      sql = `${sql} AND type != 'text'`
+    }
+    if (!options.isClearImage) {
+      sql = `${sql} AND type != 'image'`
+    }
+    if (!options.isClearFile) {
+      sql = `${sql} AND type != 'file'`
+    }
+    if (options.clearBeforeTime && !options.clearAfterTime) {
+      sql = `${sql} AND update_time < ${options.clearBeforeTime}`
+    }
+    if (options.clearAfterTime && !options.clearBeforeTime) {
+      sql = `${sql} AND update_time > ${options.clearAfterTime}`
+    }
+    logger.debug(`clearHistoryDataSQL: ${sql}`)
     db.run(sql, (err) => {
       if (err) {
         reject(err)

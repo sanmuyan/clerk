@@ -1,7 +1,14 @@
 import { appConfig, config } from '@/plugins/config'
 import { clipboard, nativeImage } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
-import { deleteData, listData, queryData, restData, updateCollect, updateRemarks } from '@/plugins/sqlite'
+import {
+  clearHistoryData,
+  deleteData,
+  listData,
+  queryData,
+  updateCollect,
+  updateRemarks
+} from '@/plugins/sqlite'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
@@ -79,10 +86,10 @@ export const handleRendererMessage = (event, arg, data) => {
       logger.debug('applySet')
       appConfig(JSON.parse(data))
       break
-    case 'resetData':
-      logger.warn('resetData')
-      restData().catch(err => {
-        logger.error(`resetData failed: ${err}`)
+    case 'clearHistoryData':
+      logger.warn(`clearHistoryData: ${JSON.stringify(data)}`)
+      clearHistoryData(data).catch(err => {
+        logger.error(`clearHistoryData failed: ${err}`)
       })
       win.webContents.send('message-from-main', 'init', config)
       break
