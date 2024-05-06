@@ -28,7 +28,7 @@
           </div>
         </div>
         <div class="app-set-button-container">
-          <el-button @click="showDataManage = !showDataManage" type="primary">清理数据</el-button>
+          <el-button @click="showClearHistory = true" type="primary">清理数据</el-button>
         </div>
         <div class="app-set-input-container">
           <div class="app-set-input-container-des">
@@ -51,8 +51,11 @@
             </el-input>
             <el-input v-model.number="setConfig.user_config.win_tools_port" type="number"
                       style="width: 100px"></el-input>
-            <el-input v-model="setConfig.user_config.shortcut_keys" type="text" style="width: 100px"></el-input>
-            <el-input v-model="setConfig.user_config.db_file" type="text" style="width: 100px"></el-input>
+            <el-input readonly @click="handleClickShortcutKeys" v-model="setConfig.user_config.shortcut_keys"
+                      type="text"
+                      style="width: 100px"></el-input>
+            <el-input readonly @click="handleClickSetDbFile" v-model="setConfig.user_config.db_file" type="text"
+                      style="width: 100px"></el-input>
           </div>
         </div>
         <div class="app-set-main-button">
@@ -61,7 +64,7 @@
         </div>
       </div>
       <el-dialog
-        v-model="showDataManage"
+        v-model="showClearHistory"
         title="清理数据"
         width="80%"
         :show-close="false"
@@ -91,7 +94,7 @@
             </div>
           </div>
           <div class="app-set-clear-container-button-item">
-            <el-button @click="showDataManage = false" type="primary">取消</el-button>
+            <el-button @click="showClearHistory = false" type="primary">取消</el-button>
             <el-popconfirm title="将会删除所选数据" @confirm="handleClearHistoryData">
               <template #reference>
                 <el-button :disabled="isDisableClearButton" type="warning">清理</el-button>
@@ -100,13 +103,44 @@
           </div>
         </div>
       </el-dialog>
+      <el-dialog
+        v-model="showShortcutKeys"
+        title="设置快捷键"
+        width="80%"
+        :show-close="false"
+      >
+        <div class="app-set-shortcut-keys-container">
+          <span>{{ shortcutKeysListen }}</span>
+          <div class="app-set-shortcut-keys-container-button-item">
+            <el-button @click="handleCloseShortcutKeysListen">取消</el-button>
+            <el-button type="primary" @click="handleApplyShortcutKeysListen">确定</el-button>
+          </div>
+        </div>
+      </el-dialog>
+      <el-dialog
+        v-model="showSetDbFile"
+        title="设置数据文件"
+        width="80%"
+        :show-close="false"
+      >
+        <div class="app-set-shortcut-keys-container">
+          <span>
+            <input accept=".db" ref="xOpenDbFile" type="file">
+          </span>
+          <div class="app-set-shortcut-keys-container-button-item">
+            <el-button @click="handleCloseSetDbFile">取消</el-button>
+            <el-button type="primary" @click="handleApplySetDbFile">确定</el-button>
+          </div>
+        </div>
+      </el-dialog>
     </el-drawer>
   </div>
 </template>
 <script setup>
-import { defineEmits, defineProps, ref, watch } from 'vue'
+import { defineEmits, defineProps, getCurrentInstance, onMounted, ref, watch } from 'vue'
 import { ipcRenderer } from 'electron'
 import { verificationConfig } from '@/utils/config'
+import { handleDownShortcutKeys, handleUpShortcutKeys } from '@/utils/shortcut-keys'
 
 const props = defineProps({
   config: {
@@ -119,7 +153,7 @@ const props = defineProps({
   }
 })
 
-const showDataManage = ref(false)
+const showClearHistory = ref(false)
 const isClearText = ref(false)
 const isClearImage = ref(false)
 const isClearFile = ref(false)
@@ -128,10 +162,52 @@ const clearBeforeTime = ref(null)
 const clearAfterTime = ref(null)
 const isDisableBeforeTime = ref(false)
 const isDisableAfterTime = ref(false)
+const showShortcutKeys = ref(false)
+const shortcutKeysListenTemp = ref([])
+const shortcutKeysListen = ref('请输入快捷键')
+const showSetDbFile = ref(false)
+const setDbFile = ref(null)
+const proxyRef = ref(null)
 
 const emit = defineEmits(['update:modelValue', 'handleApplySet'])
 
 const setConfig = ref(JSON.parse(JSON.stringify(props.config)))
+
+const handleClickShortcutKeys = () => {
+  showShortcutKeys.value = true
+}
+
+const handleCloseShortcutKeysListen = () => {
+  showShortcutKeys.value = false
+  shortcutKeysListenTemp.value = []
+  shortcutKeysListen.value = '请输入快捷键'
+}
+
+const handleApplyShortcutKeysListen = () => {
+  setConfig.value.user_config.shortcut_keys = shortcutKeysListen.value
+  showShortcutKeys.value = false
+  shortcutKeysListenTemp.value = []
+  shortcutKeysListen.value = '请输入快捷键'
+}
+
+const handleClickSetDbFile = () => {
+  showSetDbFile.value = true
+}
+
+const handleCloseSetDbFile = () => {
+  showSetDbFile.value = false
+  setDbFile.value = null
+  proxyRef.value.$refs.xOpenDbFile.value = null
+}
+
+const handleApplySetDbFile = () => {
+  if (proxyRef.value.$refs.xOpenDbFile.files.length > 0) {
+    setConfig.value.user_config.db_file = proxyRef.value.$refs.xOpenDbFile.files[0].path.replace(/\\/g, '/')
+  }
+  proxyRef.value.$refs.xOpenDbFile.value = null
+  showSetDbFile.value = false
+  setDbFile.value = null
+}
 
 const handleClose = () => {
   emit('update:modelValue', false)
@@ -192,36 +268,30 @@ watch(() => clearAfterTime.value, (val) => {
 watch(() => clearBeforeTime.value, (val) => {
   isDisableAfterTime.value = clearBeforeTime.value !== null
 })
+
+onMounted(() => {
+  window.addEventListener('keydown', (e) => {
+    if (showShortcutKeys.value) {
+      const result = handleDownShortcutKeys(shortcutKeysListenTemp.value, shortcutKeysListen.value, e)
+      shortcutKeysListenTemp.value = result.shortcutKeysListenTemp
+      shortcutKeysListen.value = result.shortcutKeysListen
+    }
+  })
+  window.addEventListener('keyup', (e) => {
+    if (showShortcutKeys.value) {
+      const result = handleUpShortcutKeys(shortcutKeysListenTemp.value, shortcutKeysListen.value, e)
+      shortcutKeysListenTemp.value = result.shortcutKeysListenTemp
+      shortcutKeysListen.value = result.shortcutKeysListen
+    }
+  })
+  proxyRef.value = getCurrentInstance().proxy
+})
+
 </script>
 <style scoped lang="scss">
 .drawer-container {
   :deep .el-drawer__body {
     padding: 0;
-  }
-
-  .app-set-clear-container {
-    .app-set-clear-container-switch-item {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-gap: 10px;
-    }
-
-    .app-set-clear-container-time-option {
-      margin-top: 25px;
-      display: flex;
-      flex-direction: column;
-      grid-gap: 25px;
-
-      .app-set-clear-container-time-option-item {
-        display: flex;
-      }
-    }
-
-    .app-set-clear-container-button-item {
-      margin-top: 25px;
-      margin-right: 10px;
-      text-align: right;
-    }
   }
 
   .app-set-container {
@@ -293,6 +363,41 @@ watch(() => clearBeforeTime.value, (val) => {
     .app-set-main-button {
       margin-top: 30px;
       margin-right: 15px;
+      text-align: right;
+    }
+  }
+
+  .app-set-clear-container {
+    .app-set-clear-container-switch-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-gap: 10px;
+    }
+
+    .app-set-clear-container-time-option {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      grid-gap: 25px;
+
+      .app-set-clear-container-time-option-item {
+        display: flex;
+      }
+    }
+
+    .app-set-clear-container-button-item {
+      margin-top: 25px;
+      margin-right: 10px;
+      text-align: right;
+    }
+  }
+
+  .app-set-shortcut-keys-container {
+    display: grid;
+    grid-gap: 25px;
+
+    .app-set-shortcut-keys-container-button-item {
+      margin-top: 25px;
       text-align: right;
     }
   }

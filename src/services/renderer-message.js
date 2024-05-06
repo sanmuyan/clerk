@@ -1,5 +1,5 @@
 import { appConfig, config } from '@/plugins/config'
-import { clipboard, nativeImage } from 'electron'
+import { clipboard, globalShortcut, nativeImage } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
 import {
   clearHistoryData,
@@ -85,6 +85,9 @@ export const handleRendererMessage = (event, arg, data) => {
     case 'applySet':
       logger.debug('applySet')
       appConfig(JSON.parse(data))
+      globalShortcut.register(config.user_config.shortcut_keys, () => {
+        handleWinDisplay()
+      })
       break
     case 'clearHistoryData':
       logger.warn(`clearHistoryData: ${JSON.stringify(data)}`)

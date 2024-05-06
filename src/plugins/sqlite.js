@@ -31,7 +31,7 @@ export const initDB = (config) => {
           if (err) {
             reject(err)
           } else {
-            logger.warn('数据库初始化成功')
+            logger.warn('数据库结构初始化成功')
             enableForeignKeys().then(resolve).catch(err => {
               reject(err)
             })
