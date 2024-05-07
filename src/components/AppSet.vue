@@ -94,7 +94,7 @@
             </div>
           </div>
           <div class="app-set-clear-container-button-item">
-            <el-button @click="showClearHistory = false" type="primary">取消</el-button>
+            <el-button @click="handleCloseClearHistory" type="primary">取消</el-button>
             <el-popconfirm title="将会删除所选数据" @confirm="handleClearHistoryData">
               <template #reference>
                 <el-button :disabled="isDisableClearButton" type="warning">清理</el-button>
@@ -229,6 +229,15 @@ const handleClearHistoryData = () => {
     clearBeforeTime: clearBeforeTime.value ? new Date(clearBeforeTime.value).getTime() / 1000 : null,
     clearAfterTime: clearAfterTime.value ? new Date(clearAfterTime.value).getTime() / 1000 : null
   })
+}
+
+const handleCloseClearHistory = () => {
+  showClearHistory.value = false
+  clearBeforeTime.value = null
+  clearAfterTime.value = null
+  isClearText.value = false
+  isClearImage.value = false
+  isClearFile.value = false
 }
 
 watch(() => props.config, (val) => {
