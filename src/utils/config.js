@@ -14,5 +14,4 @@ export const verificationConfig = (config) => {
   if (config.user_config.page_size < 1 || config.user_config.page_size > 20) {
     config.user_config.page_size = 10
   }
-  return config
 }

@@ -12,7 +12,7 @@
                    <br/>
                    <span v-if="rowData.remarks">备注： {{ rowData.remarks }}</span>
                  </template>
-                 <el-button @click="handleCopy" round :icon="CopyDocument" size="small"></el-button>
+                 <el-button @click="handleCopy(rowData)" round :icon="CopyDocument" size="small"></el-button>
             </el-tooltip>
             <el-button v-if="rowData.collect === 'y'" @click="handleCollect" round :icon="Star" type="warning"
                        size="small"></el-button>
@@ -30,8 +30,8 @@
                   <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
               </template>
             </el-popover>
-            <el-button @click="handleDelete" round :icon="Delete" size="small"></el-button>
-            <el-button @click="handleFull" round :icon="FullScreen" size="small"></el-button>
+            <el-button @click="handleDelete(rowData)" round :icon="Delete" size="small"></el-button>
+            <el-button @click="handleFull()" round :icon="FullScreen" size="small"></el-button>
           </span>
     </template>
     <el-container>
@@ -58,79 +58,56 @@
 </template>
 
 <script setup>
-import { defineEmits, defineModel, defineProps, onMounted, ref, watch } from 'vue'
+import { defineModel, inject, onMounted, ref, watch } from 'vue'
 import { CopyDocument, Delete, Edit, FullScreen, Star } from '@element-plus/icons-vue'
 import { ipcRenderer } from 'electron'
 
-const contentHeight = ref('100px')
-
-const props = defineProps({
-  rowData: {
-    type: Object,
-    required: true
-  },
-  config: {
-    type: Object,
-    required: true
-  }
-})
-
 const detailsType = defineModel('detailsType', { required: true })
 
-const cardHeight = ref('100%')
+const config = inject('config')
+const rowData = ref(inject('nowRowData'))
+const handleCopy = inject('handleCopy')
+const handleDelete = inject('handleDelete')
+const handleFull = inject('handleFull')
 
-const emit = defineEmits(['handleCopy', 'handleDelete', 'update:rowData', 'handleFull'])
+const contentHeight = ref('100px')
+
+const cardHeight = ref('100%')
 
 const remarksData = ref('')
 
 const showRemarks = ref(false)
 
-const handleCopy = () => {
-  emit('handleCopy', props.rowData)
-}
-
-const handleDelete = () => {
-  emit('handleDelete', props.rowData)
-}
-
-const handleFull = () => {
-  emit('handleFull')
-}
-
 const handleRemarks = () => {
   showRemarks.value = !showRemarks.value
-  remarksData.value = props.rowData.remarks
+  remarksData.value = rowData.value.remarks
 }
 
 const handleUpdateRemarks = () => {
   showRemarks.value = !showRemarks.value
-  const row = props.rowData
-  row.remarks = remarksData.value
-  emit('update:rowData', row)
+  rowData.value.remarks = remarksData.value
   ipcRenderer.send('message-from-renderer', 'updateRemarks', {
-    id: props.rowData.id,
+    id: rowData.value.id,
     remarks: remarksData.value
   })
 }
 
 const handleCollect = () => {
-  const row = props.rowData
-  if (row.collect === 'y') {
-    row.collect = 'n'
+  if (rowData.value.collect === 'y') {
+    rowData.value.collect = 'n'
   } else {
-    row.collect = 'y'
+    rowData.value.collect = 'y'
   }
-  emit('update:rowData', row)
   ipcRenderer.send('message-from-renderer', 'updateCollect', {
-    id: row.id,
-    collect: row.collect
+    id: rowData.value.id,
+    collect: rowData.value.collect
   })
 }
 
 const handleResize = () => {
   if (detailsType.value === 'main') {
-    if (props.config.user_config) {
-      const tableHeight = 40 * props.config.user_config.page_size
+    if (config.value.user_config) {
+      const tableHeight = 40 * config.value.user_config.page_size
       const otherHeight = 55
       cardHeight.value = (window.innerHeight - (tableHeight + otherHeight)) + 'px'
       contentHeight.value = (window.innerHeight - (tableHeight + otherHeight + 100)) + 'px'
@@ -149,7 +126,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-watch(() => props.config, (val) => {
+watch(() => config.value, (val) => {
   if (val) {
     handleResize()
   }

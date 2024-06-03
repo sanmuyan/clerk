@@ -137,17 +137,11 @@
   </div>
 </template>
 <script setup>
-import { defineEmits, defineModel, defineProps, onMounted, ref, watch } from 'vue'
+import { defineEmits, defineModel, inject, onMounted, ref, watch } from 'vue'
 import { ipcRenderer } from 'electron'
-import { verificationConfig } from '@/utils/config'
 import { handleDownShortcutKeys, handleUpShortcutKeys } from '@/utils/shortcut-keys'
 
-const props = defineProps({
-  config: {
-    type: Object,
-    required: true
-  }
-})
+const config = ref(inject('config'))
 
 const modelValue = defineModel({ required: true })
 
@@ -169,7 +163,7 @@ const openDbFileRef = ref(null)
 
 const emit = defineEmits(['handleApplySet'])
 
-const setConfig = ref(JSON.parse(JSON.stringify(props.config)))
+const setConfig = ref(JSON.parse(JSON.stringify(config.value)))
 
 const handleClickShortcutKeys = () => {
   showShortcutKeys.value = true
@@ -212,11 +206,11 @@ const handleClose = () => {
 }
 
 const handleOpen = () => {
-  setConfig.value = JSON.parse(JSON.stringify(props.config))
+  setConfig.value = JSON.parse(JSON.stringify(config.value))
 }
 const handleApplySet = () => {
+  emit('handleApplySet', setConfig.value)
   handleClose()
-  emit('handleApplySet', verificationConfig(setConfig.value))
 }
 
 const handleClearHistoryData = () => {
@@ -238,7 +232,7 @@ const handleCloseClearHistory = () => {
   isClearFile.value = false
 }
 
-watch(() => props.config, (val) => {
+watch(() => config.value, (val) => {
   if (val) {
     setConfig.value = JSON.parse(JSON.stringify(val))
   }

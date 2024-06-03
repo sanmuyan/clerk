@@ -60,28 +60,17 @@
     <div>
       <content-drawer
         v-model="showDrawer"
-        :rowData="nowRowData"
-        @handleCopy="handleCopy"
-        @handleDelete="handleDelete"
-        @handleFull="handleShowDrawer"
-        :config="config"
       ></content-drawer>
     </div>
     <div class="content-details">
       <content-details
-        @handleCopy="handleCopy"
-        @handleDelete="handleDelete"
-        @handleFull="handleShowDrawer"
-        :rowData="nowRowData"
         detailsType="main"
-        :config="config"
       >
       </content-details>
     </div>
     <div>
       <app-set
         v-model="showAppSet"
-        :config="config"
         @handleApplySet="handleApplySet">
       </app-set>
     </div>
@@ -90,11 +79,12 @@
 
 <script setup>
 import { ipcRenderer } from 'electron'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, provide, ref, watch } from 'vue'
 import ContentDrawer from '@/components/ContentDrawer.vue'
 import ContentDetails from '@/components/ContentDetails.vue'
 import { logger } from '@/plugins/logger'
 import AppSet from '@/components/AppSet.vue'
+import { verificationConfig } from '@/utils/config'
 
 const tableData = ref([])
 const inputQuery = ref('')
@@ -267,6 +257,7 @@ const handleShowAppSet = () => {
 }
 
 const handleApplySet = (newConfig) => {
+  verificationConfig(newConfig)
   handleConfigInit(newConfig)
   ipcRenderer.send('message-from-renderer', 'applySet', JSON.stringify(newConfig))
 }
@@ -559,6 +550,13 @@ ipcRenderer.on('message-from-main', (event, arg, data) => {
 
 // 监听区域 end
 
+// 提供共享数据
+provide('config', config)
+provide('nowRowData', nowRowData)
+provide('handleCopy', handleCopy)
+provide('handleCopyHide', handleCopyHide)
+provide('handleDelete', handleDelete)
+provide('handleFull', handleShowDrawer)
 </script>
 
 <style lang="scss" scoped>
