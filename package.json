@@ -24,7 +24,7 @@
     "element-plus": "^2.3.4",
     "highlight.js": "^11.7.0",
     "sqlite3": "^5.1.6",
-    "vue": "^3.2.13",
+    "vue": "^3.4.27",
     "winston": "^3.11.0"
   },
   "devDependencies": {
