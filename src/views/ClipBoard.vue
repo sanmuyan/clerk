@@ -35,7 +35,7 @@
           @cell-mouse-leave="handleMouseLeave"
           @row-dblclick="handleRowDblclick"
           highlight-current-row
-          ref="xClipBoardTableData"
+          ref="tableDataRef"
           @current-change="handleCurrentChange"
           :row-class-name="tableRowClassName"
         >
@@ -90,7 +90,7 @@
 
 <script setup>
 import { ipcRenderer } from 'electron'
-import { getCurrentInstance, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import ContentDrawer from '@/components/ContentDrawer.vue'
 import ContentDetails from '@/components/ContentDetails.vue'
 import { logger } from '@/plugins/logger'
@@ -106,7 +106,7 @@ const totalCount = ref(0)
 const showDrawer = ref(false)
 const disableShowDrawer = ref(false)
 const nowRowData = ref({})
-const proxyRef = ref(null)
+const tableDataRef = ref(null)
 const nowCount = ref(0)
 const mouseIsTable = ref(false)
 const isEnterControl = ref(false)
@@ -150,8 +150,8 @@ const handleResize = () => {
 handleResize()
 
 const handleSetCurrent = (row) => {
-  if (tableData.value.length > 0 && proxyRef.value.$refs.xClipBoardTableData && row) {
-    proxyRef.value.$refs.xClipBoardTableData.setCurrentRow(row)
+  if (tableData.value.length > 0 && tableDataRef.value && row) {
+    tableDataRef.value.setCurrentRow(row)
   }
 }
 
@@ -521,7 +521,6 @@ onMounted(() => {
   window.addEventListener('keyup', handleKeyup)
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('contextmenu', handleContextmenu)
-  proxyRef.value = getCurrentInstance().proxy
 })
 
 // 监听主进程消息

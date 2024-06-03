@@ -125,7 +125,7 @@
       >
         <div class="app-set-shortcut-keys-container">
           <span>
-            <input accept=".db" ref="xOpenDbFile" type="file">
+            <input accept=".db" ref="openDbFileRef" type="file">
           </span>
           <div class="app-set-shortcut-keys-container-button-item">
             <el-button @click="handleCloseSetDbFile">取消</el-button>
@@ -137,7 +137,7 @@
   </div>
 </template>
 <script setup>
-import { defineEmits, defineProps, getCurrentInstance, onMounted, ref, watch } from 'vue'
+import { defineEmits, defineProps, onMounted, ref, watch } from 'vue'
 import { ipcRenderer } from 'electron'
 import { verificationConfig } from '@/utils/config'
 import { handleDownShortcutKeys, handleUpShortcutKeys } from '@/utils/shortcut-keys'
@@ -167,7 +167,7 @@ const shortcutKeysListenTemp = ref([])
 const shortcutKeysListen = ref('请输入快捷键')
 const showSetDbFile = ref(false)
 const setDbFile = ref(null)
-const proxyRef = ref(null)
+const openDbFileRef = ref(null)
 
 const emit = defineEmits(['update:modelValue', 'handleApplySet'])
 
@@ -197,14 +197,14 @@ const handleClickSetDbFile = () => {
 const handleCloseSetDbFile = () => {
   showSetDbFile.value = false
   setDbFile.value = null
-  proxyRef.value.$refs.xOpenDbFile.value = null
+  openDbFileRef.value = null
 }
 
 const handleApplySetDbFile = () => {
-  if (proxyRef.value.$refs.xOpenDbFile.files.length > 0) {
-    setConfig.value.user_config.db_file = proxyRef.value.$refs.xOpenDbFile.files[0].path.replace(/\\/g, '/')
+  if (openDbFileRef.value.files.length > 0) {
+    setConfig.value.user_config.db_file = openDbFileRef.value.files[0].path.replace(/\\/g, '/')
   }
-  proxyRef.value.$refs.xOpenDbFile.value = null
+  openDbFileRef.value.value = null
   showSetDbFile.value = false
   setDbFile.value = null
 }
@@ -293,7 +293,6 @@ onMounted(() => {
       shortcutKeysListen.value = result.shortcutKeysListen
     }
   })
-  proxyRef.value = getCurrentInstance().proxy
 })
 
 </script>
