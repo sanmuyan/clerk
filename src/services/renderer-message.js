@@ -74,12 +74,16 @@ export const handleRendererMessage = (event, arg, data) => {
       break
     case 'updateCollect':
       updateCollect(data.id, data.collect).then(() => {
-        win.webContents.send('message-from-main', 'reset')
+        if (config.user_config.reset_list_post_update) {
+          win.webContents.send('message-from-main', 'reset')
+        }
       })
       break
     case 'updateRemarks':
       updateRemarks(data.id, data.remarks).then(() => {
-        win.webContents.send('message-from-main', 'reset')
+        if (config.user_config.reset_list_post_update) {
+          win.webContents.send('message-from-main', 'reset')
+        }
       })
       break
     case 'applySet':

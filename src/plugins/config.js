@@ -76,7 +76,8 @@ export const initConfig = () => {
         enable_file: true,
         watch_interval: 1000,
         reset_query_data: true,
-        reset_type_select: true
+        reset_type_select: true,
+        reset_list_post_update: true
       },
       logo_file: resourcesPath + '/logo.png'
     }

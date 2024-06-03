@@ -25,6 +25,7 @@
             <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
             <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
+            <el-checkbox v-model="setConfig.user_config.reset_list_post_update">更新后刷新</el-checkbox>
           </div>
         </div>
         <div class="app-set-button-container">
