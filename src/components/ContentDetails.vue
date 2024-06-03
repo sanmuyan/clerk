@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { defineEmits, defineProps, onMounted, ref, watch } from 'vue'
+import { defineEmits, defineModel, defineProps, onMounted, ref, watch } from 'vue'
 import { CopyDocument, Delete, Edit, FullScreen, Star } from '@element-plus/icons-vue'
 import { ipcRenderer } from 'electron'
 
@@ -69,15 +69,13 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  detailsType: {
-    type: String,
-    required: true
-  },
   config: {
     type: Object,
     required: true
   }
 })
+
+const detailsType = defineModel('detailsType', { required: true })
 
 const cardHeight = ref('100%')
 
@@ -130,7 +128,7 @@ const handleCollect = () => {
 }
 
 const handleResize = () => {
-  if (props.detailsType === 'main') {
+  if (detailsType.value === 'main') {
     if (props.config.user_config) {
       const tableHeight = 40 * props.config.user_config.page_size
       const otherHeight = 55

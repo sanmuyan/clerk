@@ -2,7 +2,7 @@
   <div class="drawer-container">
     <el-drawer
       :with-header="true"
-      :model-value="modelValue"
+      v-model="modelValue"
       destroy-on-close
       :lock-scroll="false"
       direction="rtl"
@@ -137,7 +137,7 @@
   </div>
 </template>
 <script setup>
-import { defineEmits, defineProps, onMounted, ref, watch } from 'vue'
+import { defineEmits, defineModel, defineProps, onMounted, ref, watch } from 'vue'
 import { ipcRenderer } from 'electron'
 import { verificationConfig } from '@/utils/config'
 import { handleDownShortcutKeys, handleUpShortcutKeys } from '@/utils/shortcut-keys'
@@ -146,12 +146,10 @@ const props = defineProps({
   config: {
     type: Object,
     required: true
-  },
-  modelValue: {
-    type: Boolean,
-    default: false
   }
 })
+
+const modelValue = defineModel({ required: true })
 
 const showClearHistory = ref(false)
 const isClearText = ref(false)
@@ -169,7 +167,7 @@ const showSetDbFile = ref(false)
 const setDbFile = ref(null)
 const openDbFileRef = ref(null)
 
-const emit = defineEmits(['update:modelValue', 'handleApplySet'])
+const emit = defineEmits(['handleApplySet'])
 
 const setConfig = ref(JSON.parse(JSON.stringify(props.config)))
 
@@ -210,7 +208,7 @@ const handleApplySetDbFile = () => {
 }
 
 const handleClose = () => {
-  emit('update:modelValue', false)
+  modelValue.value = false
 }
 
 const handleOpen = () => {

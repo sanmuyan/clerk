@@ -2,7 +2,7 @@
   <div class="drawer-container">
     <el-drawer
       :with-header="false"
-      :model-value="modelValue"
+      v-model="modelValue"
       destroy-on-close
       :lock-scroll="false"
       direction="btt"
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { defineEmits, defineProps } from 'vue'
+import { defineEmits, defineModel, defineProps } from 'vue'
 import ContentDetails from '@/components/ContentDetails.vue'
 
 const props = defineProps({
@@ -33,19 +33,17 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
   config: {
     type: Object,
     required: true
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'handleCopyHide', 'handleCopy', 'handleDelete', 'handleFull'])
+const modelValue = defineModel({ required: true })
+
+const emit = defineEmits(['handleCopyHide', 'handleCopy', 'handleDelete', 'handleFull'])
 const closed = () => {
-  emit('update:modelValue', false)
+  modelValue.value = false
 }
 
 const handleCopy = () => {
