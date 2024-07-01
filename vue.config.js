@@ -16,7 +16,7 @@ module.exports = defineConfig({
         win: {
           icon: './resources/logo.png',
           artifactName: 'ClerkSetup.exe',
-          legalTrademarks: 'sanmuyan',
+          legalTrademarks: 'sanmuyan.com',
           extraResources: [
             {
               from: 'WinTools/WinTools/bin/Release/net8.0',

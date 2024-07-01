@@ -30,7 +30,12 @@
                   <el-button @click="handleRemarks" round :icon="Edit" size="small"></el-button>
               </template>
             </el-popover>
-            <el-button @click="handleDelete(rowData)" round :icon="Delete" size="small"></el-button>
+            <el-popconfirm v-if="rowData.collect === 'y'" title="确定删除" @confirm="handleDeleteCollect">
+              <template #reference>
+                <el-button round :icon="Delete" size="small"></el-button>
+              </template>
+            </el-popconfirm>
+            <el-button v-else @click="handleDelete(rowData)" round :icon="Delete" size="small"></el-button>
             <el-button @click="handleFull()" round :icon="FullScreen" size="small"></el-button>
           </span>
     </template>
@@ -90,6 +95,11 @@ const handleUpdateRemarks = () => {
     id: rowData.value.id,
     remarks: remarksData.value
   })
+}
+
+const handleDeleteCollect = () => {
+  handleCollect()
+  handleDelete(rowData.value)
 }
 
 const handleCollect = () => {
