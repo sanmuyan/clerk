@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, protocol, Tray } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, Tray } from 'electron'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { initDB } from '@/plugins/sqlite'
 import { config, initConfig, isDevelopment } from '@/plugins/config'
@@ -11,7 +11,7 @@ import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { startWatch } from '@/services/clipboard'
 import { createWindow, win } from '@/services/win'
 import { logger } from '@/plugins/logger'
-import { handleShowAppSet } from '@/services/appset'
+import { handleShowAppSet, setGlobalShortcut } from '@/services/appset'
 
 const fs = require('fs')
 
@@ -104,9 +104,7 @@ app.on('ready', async () => {
   createWindow().then(() => {
   })
   // 注册全局快捷键
-  globalShortcut.register(config.user_config.shortcut_keys, () => {
-    handleWinDisplay()
-  })
+  setGlobalShortcut(config.user_config.shortcut_keys)
 
   // 定义托盘
   const icon = nativeImage.createFromPath(config.logo_file)

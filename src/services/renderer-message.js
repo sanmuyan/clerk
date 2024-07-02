@@ -1,5 +1,5 @@
 import { appConfig, config } from '@/plugins/config'
-import { clipboard, globalShortcut, nativeImage } from 'electron'
+import { clipboard, nativeImage } from 'electron'
 import { winToolsClient, winToolsReady } from '@/services/wintools'
 import {
   clearHistoryData,
@@ -13,6 +13,7 @@ import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
 import { watchFile, watchImage, watchText } from '@/services/clipboard'
+import { setGlobalShortcut } from '@/services/appset'
 
 export const handleRendererMessage = (event, arg, data) => {
   switch (arg) {
@@ -89,9 +90,6 @@ export const handleRendererMessage = (event, arg, data) => {
     case 'applySet':
       logger.debug('applySet')
       appConfig(JSON.parse(data))
-      globalShortcut.register(config.user_config.shortcut_keys, () => {
-        handleWinDisplay()
-      })
       break
     case 'clearHistoryData':
       logger.warn(`clearHistoryData: ${JSON.stringify(data)}`)
@@ -99,6 +97,9 @@ export const handleRendererMessage = (event, arg, data) => {
         logger.error(`clearHistoryData failed: ${err}`)
       })
       win.webContents.send('message-from-main', 'init', config)
+      break
+    case 'setGlobalShortcut':
+      setGlobalShortcut(data)
       break
   }
 }

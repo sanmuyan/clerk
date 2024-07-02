@@ -109,6 +109,7 @@
         title="设置快捷键"
         width="80%"
         :show-close="false"
+        @close="handleCloseShortcutKeysListen"
       >
         <div class="app-set-shortcut-keys-container">
           <span>{{ shortcutKeysListen }}</span>
@@ -167,20 +168,22 @@ const emit = defineEmits(['handleApplySet'])
 const setConfig = ref(JSON.parse(JSON.stringify(config.value)))
 
 const handleClickShortcutKeys = () => {
+  ipcRenderer.send('message-from-renderer', 'setGlobalShortcut')
   showShortcutKeys.value = true
 }
 
 const handleCloseShortcutKeysListen = () => {
+  ipcRenderer.send('message-from-renderer', 'setGlobalShortcut', setConfig.value.user_config.shortcut_keys)
   showShortcutKeys.value = false
   shortcutKeysListenTemp.value = []
   shortcutKeysListen.value = '请输入快捷键'
 }
 
 const handleApplyShortcutKeysListen = () => {
-  setConfig.value.user_config.shortcut_keys = shortcutKeysListen.value
-  showShortcutKeys.value = false
-  shortcutKeysListenTemp.value = []
-  shortcutKeysListen.value = '请输入快捷键'
+  if (shortcutKeysListen.value !== '请输入快捷键') {
+    setConfig.value.user_config.shortcut_keys = shortcutKeysListen.value
+  }
+  handleCloseShortcutKeysListen()
 }
 
 const handleClickSetDbFile = () => {
