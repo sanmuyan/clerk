@@ -35,7 +35,7 @@ export const winToolsPing = () => {
 }
 
 let winToolsExitCount = 0
-export const startWinTools = () => {
+export const startWinTools = async () => {
   if (isDevelopment) {
     winToolsClient = getClient(config)
     logger.warn('开发模式 winTools 需要手动启动')

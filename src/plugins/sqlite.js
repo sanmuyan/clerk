@@ -1,6 +1,6 @@
 import sqlite3 from 'sqlite3'
 import { getPaginator } from '@/utils/paginator'
-import { DB_CONTENT_COLUMN_MAP, DB_CONTENT_TABLE_NAME_MAP, DB_MAIN_TABLE_NAME } from '@/constant'
+import { COLLECT_MAP, DB_CONTENT_COLUMN_MAP, DB_CONTENT_TABLE_NAME_MAP, DB_MAIN_TABLE_NAME, TYPE_MAP } from '@/constant'
 import { logger } from '@/plugins/logger'
 
 const sqlite = sqlite3.verbose()
@@ -99,6 +99,9 @@ export const getClipboardWithHash = (hash, type) => {
 }
 export const addData = (content, type, hash) => {
   return new Promise((resolve, reject) => {
+    if (!(type in TYPE_MAP)) {
+      type = TYPE_MAP.text
+    }
     const timestamp = Math.floor(Date.now() / 1000)
     const mainSql = `INSERT INTO ${DB_MAIN_TABLE_NAME}(create_time,update_time,type,collect,remarks,hash) VALUES (${timestamp},${timestamp}, '${type}', 'n', '', '${hash}')`
     logger.debug(`addDataMainSQL: ${mainSql}`)
@@ -188,6 +191,9 @@ export const listData = (pageNumber, pageSize, typeSelect) => {
       countSql = `${countSql} WHERE collect = 'y'`
       break
     default:
+      if (!(typeSelect in TYPE_MAP)) {
+        typeSelect = TYPE_MAP.text
+      }
       sql = `${sql} WHERE type = '${typeSelect}'`
       countSql = `${countSql} WHERE type = '${typeSelect}'`
       break
@@ -267,6 +273,9 @@ export const clearWithNumber = (maxNumber) => {
 
 export const updateCollect = (id, collect) => {
   return new Promise((resolve, reject) => {
+    if (!(collect in COLLECT_MAP)) {
+      collect = COLLECT_MAP.n
+    }
     const sql = `UPDATE ${DB_MAIN_TABLE_NAME} SET collect = '${collect}' WHERE id = ${id}`
     logger.debug(`updateCollectSQL: ${sql}`)
     db.run(sql, (err) => {

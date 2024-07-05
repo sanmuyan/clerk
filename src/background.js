@@ -12,6 +12,7 @@ import { startWatch } from '@/services/clipboard'
 import { createWindow, win } from '@/services/win'
 import { logger } from '@/plugins/logger'
 import { handleShowAppSet, setGlobalShortcut } from '@/services/appset'
+import { startServer } from '@/services/server'
 
 const fs = require('fs')
 
@@ -36,14 +37,6 @@ if (isDevelopment) {
 
 // 初始化配置
 initConfig()
-
-// 启动WinTools
-if (config.user_config.enable_win_tools) {
-  startWinTools()
-  setInterval(() => {
-    winToolsPing()
-  }, 1000)
-}
 
 // 初始化数据库
 initDB(config).then((res) => {
@@ -194,6 +187,18 @@ ipcMain.on('message-from-renderer', (event, arg, data) => {
 })
 
 const start = async () => {
+  // 启动WinTools
+  if (config.user_config.enable_win_tools) {
+    startWinTools().finally(() => {
+      setInterval(() => {
+        winToolsPing()
+      }, 1000)
+    })
+  }
+  // 启动服务器
+  if (config.user_config.enable_server) {
+    startServer().then()
+  }
   // 启动时清理历史数据
   await clearHistoryData().then()
   // 监听并处理剪贴板变化

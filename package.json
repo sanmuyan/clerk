@@ -22,6 +22,7 @@
     "@highlightjs/vue-plugin": "^2.1.0",
     "core-js": "^3.8.3",
     "element-plus": "^2.3.4",
+    "express": "^4.19.2",
     "highlight.js": "^11.7.0",
     "sqlite3": "^5.1.6",
     "vue": "^3.4.27",

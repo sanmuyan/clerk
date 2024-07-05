@@ -11,59 +11,68 @@
       @open="handleOpen"
       title="设置"
     >
-      <div class="app-set-container">
-        <div class="app-set-switch-container">
-          <div class="app-set-switch-container-item">
-            <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
+      <el-scrollbar>
+        <div class="app-set-container">
+          <div class="app-set-switch-container">
+            <div class="app-set-switch-container-item">
+              <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.enable_server">接口服务</el-checkbox>
+            </div>
+            <div class="app-set-switch-container-item">
+              <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
+              <el-checkbox v-model="setConfig.user_config.reset_list_post_update">更新后刷新</el-checkbox>
+            </div>
           </div>
-          <div class="app-set-switch-container-item">
-            <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
-            <el-checkbox v-model="setConfig.user_config.reset_list_post_update">更新后刷新</el-checkbox>
+          <div class="app-set-button-container">
+            <el-button @click="showClearHistory = true" type="primary">清理数据</el-button>
           </div>
-        </div>
-        <div class="app-set-button-container">
-          <el-button @click="showClearHistory = true" type="primary">清理数据</el-button>
-        </div>
-        <div class="app-set-input-container">
-          <div class="app-set-input-container-des">
-            <div>监听间隔：</div>
-            <div>显示数量：</div>
-            <div>保留条数：</div>
-            <div>保留时间：</div>
-            <div>系统工具端口：</div>
-            <div>快捷键：</div>
-            <div>数据库文件：</div>
+          <div class="app-set-input-container">
+            <div class="app-set-input-container-des">
+              <div>监听间隔：</div>
+              <div>显示数量：</div>
+              <div>保留条数：</div>
+              <div>保留时间：</div>
+              <div>系统工具端口：</div>
+              <div>接口端口：</div>
+              <div>接口口令：</div>
+              <div>快捷键：</div>
+              <div>数据库文件：</div>
+            </div>
+            <div class="app-set-input-container-item">
+              <el-input v-model.number="setConfig.user_config.watch_interval" type="number" style="width: 100px">
+                <template #suffix>ms</template>
+              </el-input>
+              <el-input v-model.number="setConfig.user_config.page_size" type="number" style="width: 100px"></el-input>
+              <el-input v-model.number="setConfig.user_config.max_number" type="number" style="width: 100px"></el-input>
+              <el-input v-model.number="setConfig.user_config.max_time" type="number" style="width: 100px">
+                <template #suffix>s</template>
+              </el-input>
+              <el-input v-model.number="setConfig.user_config.win_tools_port" type="number"
+                        style="width: 100px"></el-input>
+              <el-input v-model.number="setConfig.user_config.server_port" type="number"
+                        style="width: 100px"></el-input>
+              <el-input v-model="setConfig.user_config.server_token" type="text" style="width: 100px"></el-input>
+              <el-input readonly @click="handleClickShortcutKeys" v-model="setConfig.user_config.shortcut_keys"
+                        type="text"
+                        style="width: 100px"></el-input>
+              <el-input readonly @click="handleClickSetDbFile" v-model="setConfig.user_config.db_file" type="text"
+                        style="width: 100px"></el-input>
+            </div>
           </div>
-          <div class="app-set-input-container-item">
-            <el-input v-model.number="setConfig.user_config.watch_interval" type="number" style="width: 100px">
-              <template #suffix>ms</template>
-            </el-input>
-            <el-input v-model.number="setConfig.user_config.page_size" type="number" style="width: 100px"></el-input>
-            <el-input v-model.number="setConfig.user_config.max_number" type="number" style="width: 100px"></el-input>
-            <el-input v-model.number="setConfig.user_config.max_time" type="number" style="width: 100px">
-              <template #suffix>s</template>
-            </el-input>
-            <el-input v-model.number="setConfig.user_config.win_tools_port" type="number"
-                      style="width: 100px"></el-input>
-            <el-input readonly @click="handleClickShortcutKeys" v-model="setConfig.user_config.shortcut_keys"
-                      type="text"
-                      style="width: 100px"></el-input>
-            <el-input readonly @click="handleClickSetDbFile" v-model="setConfig.user_config.db_file" type="text"
-                      style="width: 100px"></el-input>
+          <div class="app-set-main-button">
+            <el-button @click="handleClose">取消</el-button>
+            <el-button type="primary" @click="handleApplySet">应用</el-button>
           </div>
+          <div style="margin-top: 25px"></div>
         </div>
-        <div class="app-set-main-button">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleApplySet">应用</el-button>
-        </div>
-      </div>
+      </el-scrollbar>
       <el-dialog
         v-model="showClearHistory"
         title="清理数据"
@@ -366,6 +375,7 @@ onMounted(() => {
 
     .app-set-main-button {
       margin-top: 30px;
+      margin-bottom: 30px;
       margin-right: 15px;
       text-align: right;
     }

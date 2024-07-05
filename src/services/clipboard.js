@@ -5,8 +5,9 @@ import { config } from '@/plugins/config'
 import { getHash } from '@/plugins/hash'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
+import { TYPE_MAP } from '@/constant'
 
-const handleClipboard = async (currentContent, type, currentHash) => {
+export const handleClipboard = async (currentContent, type, currentHash) => {
   const timestamp = Math.floor(Date.now() / 1000)
   await getClipboardWithHash(currentHash, type).then(async (res) => {
     if (res) {
@@ -30,7 +31,7 @@ let previousImageHash = null
 
 const clearPrevious = (type) => {
   switch (type) {
-    case 'file':
+    case TYPE_MAP.file:
       if (clipboard.readText() === '') {
         previousTextHash = null
       }
@@ -38,11 +39,11 @@ const clearPrevious = (type) => {
         previousImageHash = null
       }
       break
-    case 'text':
+    case TYPE_MAP.text:
       previousImageHash = null
       previousFileHash = null
       break
-    case 'image':
+    case TYPE_MAP.image:
       if (clipboard.readText() === '') {
         previousTextHash = null
       }
@@ -52,7 +53,7 @@ const clearPrevious = (type) => {
 }
 
 export const watchText = async () => {
-  const type = 'text'
+  const type = TYPE_MAP.text
   const currentText = clipboard.readText()
   // 文本不能超过1MB
   if (currentText === '' || currentText.trim().length === 0 || currentText.length > 1048576) {
@@ -68,7 +69,7 @@ export const watchText = async () => {
 }
 
 export const watchImage = async () => {
-  const type = 'image'
+  const type = TYPE_MAP.image
   const image = clipboard.readImage()
   if (image.isEmpty()) {
     return
@@ -89,7 +90,7 @@ export const watchImage = async () => {
 }
 
 export const watchFile = () => {
-  const type = 'file'
+  const type = TYPE_MAP.file
   if (winToolsReady) {
     winToolsClient.GetFileDropList({}, async (err, res) => {
       if (err) {

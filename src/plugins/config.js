@@ -77,7 +77,10 @@ export const initConfig = () => {
         watch_interval: 1000,
         reset_query_data: true,
         reset_type_select: true,
-        reset_list_post_update: true
+        reset_list_post_update: true,
+        enable_server: true,
+        server_token: 'abc123456',
+        server_port: 3030
       },
       logo_file: resourcesPath + '/logo.png'
     }

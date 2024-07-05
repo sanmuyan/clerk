@@ -13,3 +13,14 @@ export const DB_CONTENT_COLUMN_MAP = {
 }
 
 export const DB_IMAGE_CHECKSUMS_COLUMN = 'image_checksums'
+
+export const TYPE_MAP = {
+  image: 'image',
+  text: 'text',
+  file: 'file'
+}
+
+export const COLLECT_MAP = {
+  y: 'y',
+  n: 'n'
+}
