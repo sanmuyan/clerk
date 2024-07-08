@@ -1,8 +1,8 @@
 {
   "name": "clerk",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "剪切板工具",
-  "author": "sanmuyan",
+  "author": "sanmuyan.com",
   "license": "MIT",
   "private": true,
   "scripts": {
