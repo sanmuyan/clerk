@@ -37,6 +37,7 @@ const closed = () => {
 .drawer-container {
   :deep .el-drawer__body {
     padding: 0;
+    overflow: hidden;
   }
 }
 </style>

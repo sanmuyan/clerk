@@ -62,7 +62,7 @@
         v-model="showDrawer"
       ></content-drawer>
     </div>
-    <div class="content-details">
+    <div>
       <content-details
         detailsType="main"
       >
@@ -590,12 +590,6 @@ provide('handleFull', handleShowDrawer)
 
     .image-container {
       height: 23px;
-    }
-  }
-
-  .content-details {
-    .el-card :deep {
-      border: 0;
     }
   }
 }

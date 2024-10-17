@@ -40,24 +40,22 @@
           </span>
     </template>
     <el-container>
-      <el-container class="content-container">
-        <el-scrollbar>
-          <el-container>
-            <div v-if="rowData.type === 'text'">
-              <highlightjs v-if="rowData.size < 10240" autodetect :code="rowData.content"/>
-              <span v-else> {{ rowData.content }}</span>
-            </div>
-            <div v-if="rowData.type === 'image'">
-              <img :src="rowData.content" alt=""/>
-            </div>
-            <div v-if="rowData.type === 'file'">
-              <ul>
-                <li style="white-space:nowrap;" v-for="item in rowData.fileContentArray" :key="item"> {{ item }}</li>
-              </ul>
-            </div>
-          </el-container>
-        </el-scrollbar>
-      </el-container>
+      <el-scrollbar>
+        <el-container :style="{maxHeight: contentHeight}">
+          <div v-if="rowData.type === 'text'">
+            <highlightjs class="hl-pre" v-if="rowData.size < 10240" autodetect :code="rowData.content"/>
+            <span v-else> {{ rowData.content }}</span>
+          </div>
+          <div v-if="rowData.type === 'image'">
+            <img :src="rowData.content" alt=""/>
+          </div>
+          <div v-if="rowData.type === 'file'">
+            <ul class="file-ul">
+              <li style="white-space:nowrap;" v-for="item in rowData.fileContentArray" :key="item"> {{ item }}</li>
+            </ul>
+          </div>
+        </el-container>
+      </el-scrollbar>
     </el-container>
   </el-card>
 </template>
@@ -75,9 +73,7 @@ const handleCopy = inject('handleCopy')
 const handleDelete = inject('handleDelete')
 const handleFull = inject('handleFull')
 
-const contentHeight = ref('100px')
-
-const cardHeight = ref('100%')
+const contentHeight = ref('200px')
 
 const remarksData = ref('')
 
@@ -115,18 +111,16 @@ const handleCollect = () => {
 }
 
 const handleResize = () => {
-  if (detailsType.value === 'main') {
-    if (config.value.user_config) {
-      const tableHeight = 40 * config.value.user_config.page_size
-      const otherHeight = 55
-      cardHeight.value = (window.innerHeight - (tableHeight + otherHeight)) + 'px'
-      contentHeight.value = (window.innerHeight - (tableHeight + otherHeight + 100)) + 'px'
-    } else {
-      cardHeight.value = (window.innerHeight - 455) + 'px'
-      contentHeight.value = (cardHeight.value - 555) + 'px'
+  if (config.value.user_config && detailsType.value === 'main') {
+    const tableHeight = 40 * config.value.user_config.page_size // 数据条目长度
+    const otherHeight = 25 + 30 + 62 + 20 + 20 // 窗口头部=25 搜索框=30 内容头部=62 内容上间距=20
+    if ((window.innerHeight - (tableHeight + otherHeight)) > 100) {
+      contentHeight.value = (window.innerHeight - (tableHeight + otherHeight)) + 'px'
     }
   } else {
-    contentHeight.value = (window.innerHeight - 100) + 'px'
+    if (window.innerHeight > 200) {
+      contentHeight.value = (window.innerHeight - 62 - 20 - 20) + 'px'
+    }
   }
 }
 
@@ -146,13 +140,12 @@ watch(() => config.value, (val) => {
 
 <style scoped lang="scss">
 .card-container {
-  width: 100%;
-  height: v-bind(cardHeight);
   border: none;
-
-  .content-container {
-    max-height: v-bind(contentHeight);
-    width: 100%;
+  .hl-pre {
+    margin: 0;
+  }
+  .file-ul {
+    margin-block-start: 0;
   }
 }
 
