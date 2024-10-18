@@ -4,7 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, protocol, Tray 
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { initDB } from '@/plugins/sqlite'
 import { config, initConfig, isDevelopment } from '@/plugins/config'
-import { startWinTools, winToolsPing } from '@/services/wintools'
+import { startWinTools, winToolsPing, winToolsRunning } from '@/services/wintools'
 import { clearHistoryData } from '@/services/prune'
 import { handleRendererMessage } from '@/services/renderer-message'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
@@ -63,10 +63,17 @@ let tray = null
 let exiting = false
 
 const handleExit = () => {
-  logger.warn('进程退出')
-  exiting = true
   app.quit()
 }
+
+app.on('before-quit', () => {
+  exiting = true
+  if (winToolsRunning) {
+    winToolsRunning.kill('SIGTERM')
+  }
+  logger.warn('应用关闭中...')
+})
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar

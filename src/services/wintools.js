@@ -2,7 +2,6 @@ import { config, isDevelopment } from '@/plugins/config'
 import { getClient } from '@/plugins/wintools'
 import { spawn } from 'child_process'
 import { logger } from '@/plugins/logger'
-import { dialog } from 'electron'
 
 export let winToolsReady = false
 export let winToolsClient = {
@@ -34,13 +33,13 @@ export const winToolsPing = () => {
   })
 }
 
-let winToolsExitCount = 0
+export let winToolsRunning = null
 export const startWinTools = async () => {
   if (isDevelopment) {
     winToolsClient = getClient(config)
     logger.warn('开发模式 winTools 需要手动启动')
   } else {
-    const winToolsRunning = spawn(config.win_tools_file, [config.user_config.win_tools_port.toString()])
+    winToolsRunning = spawn(config.win_tools_file, [config.user_config.win_tools_port.toString()])
     winToolsRunning.stdout.on('data', (data) => {
       logger.info(`winTools 运行中: ${data.toString()}`)
       if (!winToolsReady) {
@@ -53,13 +52,6 @@ export const startWinTools = async () => {
     winToolsRunning.on('exit', (code, signal) => {
       logger.warn(`winTools 运行退出: ${code} ${signal}`)
       winToolsReady = false
-      if (winToolsExitCount === 0) {
-        dialog.showErrorBox('错误', 'WinTools 进程退出')
-      }
-      if (winToolsExitCount < 3) {
-        startWinTools()
-      }
-      winToolsExitCount++
     })
   }
 }
