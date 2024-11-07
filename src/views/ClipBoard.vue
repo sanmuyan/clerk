@@ -99,6 +99,7 @@ const nowRowData = ref({})
 const tableDataRef = ref(null)
 const nowCount = ref(0)
 const mouseIsTable = ref(false)
+const isMouseInContent = ref(false)
 const isEnterControl = ref(false)
 const config = ref({})
 const typeSelect = ref('text')
@@ -171,7 +172,7 @@ const handleTableData = (data, action) => {
   })
   // 默认选中第一行
   if (tableData.value.length > 0) {
-    if (action === 'pre') {
+    if (action === 'preRow') {
       nowRowData.value = tableData.value[tableData.value.length - 1]
       handleSetCurrent(nowRowData.value)
     } else {
@@ -304,24 +305,63 @@ const handleMouseLeave = (row) => {
 const handleNextPageData = () => {
   if (pageNumber.value * pageSize.value + pageSize.value < totalCount.value + pageSize.value) {
     pageNumber.value += 1
-    getTableData('next')
+    getTableData('nextPage')
+  } else {
+    if (tableData.value.length > 1) {
+      const nextObj = tableData.value[tableData.value.length - 1]
+      handleSetCurrent(nextObj)
+    }
   }
 }
 
 // 获取上一页数据
-const handlePrePageData = () => {
+const handlePrePageData = (action) => {
+  if (!action) {
+    action = 'prePage'
+  }
   if (pageNumber.value > 1) {
     pageNumber.value -= 1
-    getTableData('pre')
+    getTableData(action)
+  } else {
+    if (tableData.value.length > 1) {
+      const nextObj = tableData.value[0]
+      handleSetCurrent(nextObj)
+    }
   }
+}
+
+// 处理下一行数据
+const handleNextRowData = () => {
+  const currentIndex = tableData.value.findIndex(obj => obj.id === nowRowData.value.id)
+  if (currentIndex === tableData.value.length - 1) {
+    handleNextPageData()
+    return
+  }
+  const nextObj = tableData.value[currentIndex + 1]
+  handleSetCurrent(nextObj)
+}
+
+// 处理上一行数据
+const handlePreRowData = () => {
+  const currentIndex = tableData.value.findIndex(obj => obj.id === nowRowData.value.id)
+  if (currentIndex === 0) {
+    handlePrePageData('preRow')
+    return
+  }
+  const nextObj = tableData.value[currentIndex - 1]
+  handleSetCurrent(nextObj)
 }
 
 // 滚轮事件
 const handleWheel = (event) => {
-  if (showDrawer.value || !mouseIsTable.value) {
+  if (isMouseInContent.value) {
     return
   }
   if (!handleEventLimit(event)) {
+    return
+  }
+  if (showDrawer.value) {
+    event.wheelDelta > 0 ? handlePreRowData() : handleNextRowData()
     return
   }
   event.wheelDelta > 0 ? handlePrePageData() : handleNextPageData()
@@ -369,13 +409,7 @@ const handleArrowDown = (event, type) => {
   if (!handleDownKeyLimit(event, type)) {
     return
   }
-  const currentIndex = tableData.value.findIndex(obj => obj.id === nowRowData.value.id)
-  if (currentIndex === tableData.value.length - 1) {
-    handleNextPageData()
-    return
-  }
-  const nextObj = tableData.value[currentIndex + 1]
-  handleSetCurrent(nextObj)
+  handleNextRowData()
 }
 
 // 键盘上箭头处理
@@ -383,13 +417,7 @@ const handleArrowUp = (event, type) => {
   if (!handleDownKeyLimit(event, type)) {
     return
   }
-  const currentIndex = tableData.value.findIndex(obj => obj.id === nowRowData.value.id)
-  if (currentIndex === 0) {
-    handlePrePageData()
-    return
-  }
-  const nextObj = tableData.value[currentIndex - 1]
-  handleSetCurrent(nextObj)
+  handlePreRowData()
 }
 
 const tableRowClassName = (row, rowIndex) => {
@@ -557,6 +585,7 @@ provide('handleCopy', handleCopy)
 provide('handleCopyHide', handleCopyHide)
 provide('handleDelete', handleDelete)
 provide('handleFull', handleShowDrawer)
+provide('isMouseInContent', isMouseInContent)
 </script>
 
 <style lang="scss" scoped>

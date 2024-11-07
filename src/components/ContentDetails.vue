@@ -39,7 +39,7 @@
             <el-button @click="handleFull()" round :icon="FullScreen" size="small"></el-button>
           </span>
     </template>
-    <el-container>
+    <el-container @mouseenter="handleMouseEnterContent" @mouseleave="handleMouseLeaveContent">
       <el-scrollbar>
         <el-container :style="{maxHeight: contentHeight}">
           <div v-if="rowData.type === 'text'">
@@ -72,6 +72,7 @@ const rowData = ref(inject('nowRowData'))
 const handleCopy = inject('handleCopy')
 const handleDelete = inject('handleDelete')
 const handleFull = inject('handleFull')
+const isMouseInContent = inject('isMouseInContent')
 
 const contentHeight = ref('200px')
 
@@ -135,6 +136,14 @@ watch(() => config.value, (val) => {
     handleResize()
   }
 })
+
+const handleMouseEnterContent = () => {
+  isMouseInContent.value = true
+}
+
+const handleMouseLeaveContent = () => {
+  isMouseInContent.value = false
+}
 
 </script>
 
