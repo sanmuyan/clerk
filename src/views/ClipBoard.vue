@@ -432,6 +432,16 @@ const handleControl = (event) => {
   event.ctrlKey ? isEnterControl.value = true : isEnterControl.value = false
 }
 
+// 处理 ctrl+c 键
+const handleControlWithC = () => {
+  if (isMouseInContent.value) {
+    return
+  }
+  if (isEnterControl.value) {
+    handleCopy(nowRowData.value)
+  }
+}
+
 // 处理 page 键
 const handlePageKey = (event, type) => {
   if (showDrawer.value) {
@@ -479,9 +489,7 @@ const handleKeyup = (event) => {
   logger.debug(`key up event: ${event.key}`)
   switch (event.key) {
     case 'c':
-      if (isEnterControl.value) {
-        handleCopy(nowRowData.value)
-      }
+      handleControlWithC()
       break
     case 'ArrowDown':
       handleArrowDown(event)
