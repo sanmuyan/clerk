@@ -56,8 +56,13 @@ export const initConfig = () => {
       user_config_path: userConfigPath,
       init_sql: fs.readFileSync(resourcesPath + '/init.sql', 'utf8'),
       window: {
-        width: 600,
-        height: 800
+        width: 350,
+        height: 760,
+        x: 0,
+        y: 0,
+        dpi: 1,
+        isMaximized: false,
+        windowId: 0
       },
       window_config_file: userConfigPath + '/window.json',
       user_config: {
@@ -80,7 +85,8 @@ export const initConfig = () => {
         reset_list_post_update: true,
         enable_server: true,
         server_token: 'abc123456',
-        server_port: 3030
+        server_port: 3030,
+        reset_win_size: false
       },
       logo_file: resourcesPath + '/logo.png'
     }
