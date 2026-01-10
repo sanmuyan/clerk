@@ -14,4 +14,7 @@ export const verificationConfig = (config) => {
   if (config.user_config.page_size < 1 || config.user_config.page_size > 20) {
     config.user_config.page_size = 10
   }
+  if (config.user_config.clipboard_clear_time < 10) {
+    config.user_config.clipboard_clear_time = 0
+  }
 }

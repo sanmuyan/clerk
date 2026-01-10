@@ -23,6 +23,7 @@ export const handleClipboard = async (currentContent, type, currentHash) => {
     }
     win.webContents.send('message-from-main', 'newClipboard')
   })
+  clearClipboard().then()
 }
 
 let previousTextHash = null
@@ -135,4 +136,18 @@ export const startWatch = (interval) => {
       resolve()
     }, interval)
   })
+}
+
+let clearClipboardTimer = null
+
+export const clearClipboard = async () => {
+  if (config.user_config.clipboard_clear_time > 0) {
+    if (clearClipboardTimer) {
+      clearTimeout(clearClipboardTimer)
+    }
+    clearClipboardTimer = setTimeout(() => {
+      logger.info('clearClipboard')
+      clipboard.clear()
+    }, config.user_config.clipboard_clear_time * 1000)
+  }
 }

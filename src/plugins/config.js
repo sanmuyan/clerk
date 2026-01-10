@@ -86,7 +86,8 @@ export const initConfig = () => {
         enable_server: true,
         server_token: 'abc123456',
         server_port: 3030,
-        reset_win_size: false
+        reset_win_size: false,
+        clipboard_clear_time: 0
       },
       logo_file: resourcesPath + '/logo.png'
     }

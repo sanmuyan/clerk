@@ -14,57 +14,42 @@
       <el-scrollbar>
         <div class="app-set-container">
           <div class="app-set-switch-container">
-            <div class="app-set-switch-container-item">
-              <el-checkbox v-model="setConfig.user_config.enable_text">文本</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.enable_image">图片</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.enable_file">文件</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.hide_paste">自动粘贴</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.enable_win_tools">系统工具</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.enable_server">接口服务</el-checkbox>
-            </div>
-            <div class="app-set-switch-container-item">
-              <el-checkbox v-model="setConfig.user_config.blur_hide">失焦最小化</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.copy_hide">复制最小化</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.reset_query_data">重置搜索</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.reset_type_select">重置分类</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.reset_list_post_update">更新后刷新</el-checkbox>
-              <el-checkbox v-model="setConfig.user_config.reset_win_size">重置窗口</el-checkbox>
+            <div
+              class="app-set-switch-container-item"
+              v-for="item in appSetSwitchItems"
+              :key="item.label"
+            >
+              <el-checkbox v-model="setConfig.user_config[item.key]">{{item.label}}</el-checkbox>
             </div>
           </div>
           <div class="app-set-button-container">
             <el-button @click="showClearHistory = true" type="primary">清理数据</el-button>
           </div>
           <div class="app-set-input-container">
-            <div class="app-set-input-container-des">
-              <div>监听间隔：</div>
-              <div>显示数量：</div>
-              <div>保留条数：</div>
-              <div>保留时间：</div>
-              <div>系统工具端口：</div>
-              <div>接口端口：</div>
-              <div>接口口令：</div>
-              <div>快捷键：</div>
-              <div>数据库文件：</div>
-            </div>
-            <div class="app-set-input-container-item">
-              <el-input v-model.number="setConfig.user_config.watch_interval" type="number" style="width: 100px">
-                <template #suffix>ms</template>
+            <div class="app-set-input-container-item"
+                 v-for="item in appSetInputItems"
+                 :key="item.label"
+            >
+              <span class="app-set-input-container-des">{{ item.label }}</span>
+              <el-input
+                class="app-set-input-container-input"
+                v-if="item.inputType === 'number'"
+                :readonly="item.readonly"
+                @click="item.inputClick"
+                v-model.number="setConfig.user_config[item.key]"
+                :type=item.inputType>
+                <template #suffix>{{item.inputSuffix}}</template>
               </el-input>
-              <el-input v-model.number="setConfig.user_config.page_size" type="number" style="width: 100px"></el-input>
-              <el-input v-model.number="setConfig.user_config.max_number" type="number" style="width: 100px"></el-input>
-              <el-input v-model.number="setConfig.user_config.max_time" type="number" style="width: 100px">
-                <template #suffix>s</template>
+              <el-input
+                class="app-set-input-container-input"
+                v-else
+                :show-password="item.inputType === 'password'"
+                :readonly="item.readonly"
+                @click="item.inputClick"
+                v-model="setConfig.user_config[item.key]"
+                :type=item.inputType>
+                <template #suffix>{{item.inputSuffix}}</template>
               </el-input>
-              <el-input v-model.number="setConfig.user_config.win_tools_port" type="number"
-                        style="width: 100px"></el-input>
-              <el-input v-model.number="setConfig.user_config.server_port" type="number"
-                        style="width: 100px"></el-input>
-              <el-input v-model="setConfig.user_config.server_token" type="text" style="width: 100px"></el-input>
-              <el-input readonly @click="handleClickShortcutKeys" v-model="setConfig.user_config.shortcut_keys"
-                        type="text"
-                        style="width: 100px"></el-input>
-              <el-input readonly @click="handleClickSetDbFile" v-model="setConfig.user_config.db_file" type="text"
-                        style="width: 100px"></el-input>
             </div>
           </div>
           <div class="app-set-main-button">
@@ -301,6 +286,116 @@ onMounted(() => {
   })
 })
 
+const appSetInputItems = ref([
+  {
+    label: '监听间隔',
+    inputType: 'number',
+    inputSuffix: 'ms',
+    key: 'watch_interval'
+  },
+  {
+    label: '显示数量',
+    inputType: 'number',
+    key: 'page_size'
+  },
+  {
+    label: '保留条数',
+    inputType: 'number',
+    key: 'max_number'
+  },
+  {
+    label: '保留时间',
+    inputType: 'number',
+    inputSuffix: 's',
+    key: 'max_time'
+  },
+  {
+    label: '清空剪切板',
+    inputType: 'number',
+    inputSuffix: 's',
+    key: 'clipboard_clear_time'
+  },
+  {
+    label: '系统工具端口',
+    inputType: 'number',
+    key: 'win_tools_port'
+  },
+  {
+    label: '接口端口',
+    inputType: 'number',
+    key: 'server_port'
+  },
+  {
+    label: '接口口令',
+    inputType: 'password',
+    key: 'server_token'
+  },
+  {
+    label: '快捷键',
+    inputType: 'text',
+    inputClick: handleClickShortcutKeys,
+    readonly: true,
+    key: 'shortcut_keys'
+  },
+  {
+    label: '数据库文件',
+    inputType: 'text',
+    inputClick: handleClickSetDbFile,
+    readonly: true,
+    key: 'db_file'
+  }
+])
+
+const appSetSwitchItems = ref([
+  {
+    label: '文本',
+    key: 'enable_text'
+  },
+  {
+    label: '图片',
+    key: 'enable_image'
+  },
+  {
+    label: '文件',
+    key: 'enable_file'
+  },
+  {
+    label: '自动粘贴',
+    key: 'hide_paste'
+  },
+  {
+    label: '系统工具',
+    key: 'enable_win_tools'
+  },
+  {
+    label: '接口服务',
+    key: 'enable_server'
+  },
+  {
+    label: '失焦最小化',
+    key: 'blur_hide'
+  },
+  {
+    label: '复制最小化',
+    key: 'copy_hide'
+  },
+  {
+    label: '重置搜索',
+    key: 'reset_query_data'
+  },
+  {
+    label: '重置分类',
+    key: 'reset_type_select'
+  },
+  {
+    label: '更新后刷新',
+    key: 'reset_list_post_update'
+  },
+  {
+    label: '重置窗口',
+    key: 'reset_win_size'
+  }
+])
 </script>
 <style scoped lang="scss">
 .drawer-container {
@@ -324,7 +419,7 @@ onMounted(() => {
     }
 
     .app-set-button-container {
-      margin-top: 30px;
+      margin-top: 15px;
       margin-left: 22px;
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -336,41 +431,24 @@ onMounted(() => {
     }
 
     .app-set-input-container {
-      margin-top: 30px;
-      display: grid;
-      grid-template-columns: repeat(100, 100px);
-      grid-gap: 10px;
-
-      .app-set-input-container-des {
-        font-size: 14px;
-        text-align: right;
-        display: flex;
-        flex-direction: column;
-        grid-gap: 10px;
-
-        div {
-          margin-top: 2px;
-          margin-bottom: 2px;
-        }
-      }
+      margin-top: 15px;
 
       .app-set-input-container-item {
-        .el-input :deep .el-input__inner {
-          --el-input-inner-height: 21px;
-        }
-
-        :deep .el-input__suffix-inner {
-          height: 21px;
-        }
-
-        .el-button :deep {
-          height: 21px;
-        }
-
-        text-align: left;
         display: flex;
-        flex-direction: column;
-        grid-gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .app-set-input-container-des {
+          font-size: 14px;
+          width: 80px;
+          text-align: right;
+          margin-right: 20px;
+          white-space: nowrap;
+        }
+        .app-set-input-container-input {
+          height: 25px;
+          width: 150px;
+        }
       }
     }
 

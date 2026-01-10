@@ -12,7 +12,7 @@ import {
 import { handleWinDisplay, winShow } from '@/services/windisplay'
 import { win } from '@/services/win'
 import { logger } from '@/plugins/logger'
-import { watchFile, watchImage, watchText } from '@/services/clipboard'
+import { clearClipboard, watchFile, watchImage, watchText } from '@/services/clipboard'
 import { setGlobalShortcut } from '@/services/appset'
 
 export const handleRendererMessage = (event, arg, data) => {
@@ -25,6 +25,7 @@ export const handleRendererMessage = (event, arg, data) => {
       }
       break
     case 'write':
+      clearClipboard().then()
       switch (data.type) {
         case 'text':
           logger.debug('writeClipboardText')
