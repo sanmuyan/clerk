@@ -10,7 +10,7 @@ import {
   updateRemarks
 } from '@/plugins/sqlite'
 import { handleWinDisplay, winShow } from '@/services/windisplay'
-import { win } from '@/services/win'
+import { showContextmenu, win } from '@/services/win'
 import { logger } from '@/plugins/logger'
 import { clearClipboard, watchFile, watchImage, watchText } from '@/services/clipboard'
 import { setGlobalShortcut } from '@/services/appset'
@@ -101,6 +101,10 @@ export const handleRendererMessage = (event, arg, data) => {
       break
     case 'setGlobalShortcut':
       setGlobalShortcut(data)
+      break
+    case 'showContextmenu':
+      logger.debug(`showContextmenu: ${data}`)
+      showContextmenu(data)
       break
   }
 }

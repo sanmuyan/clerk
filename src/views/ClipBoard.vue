@@ -458,6 +458,9 @@ const handleContextmenu = (event) => {
   if (mouseIsTable.value) {
     handleCopy(nowRowData.value)
   }
+  if (isMouseInContent.value) {
+    ipcRenderer.send('message-from-renderer', 'showContextmenu', window.getSelection().toString())
+  }
 }
 
 // 处理双击键

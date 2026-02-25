@@ -85,6 +85,34 @@ const createWindowState = () => {
       }
     }
   })
+
+  // 右键菜单
+  // win.webContents.on('context-menu', (e, params) => {
+  //   const selectEnabled = !!params.selectionText.trim().length
+  //   const template = []
+  //   if (params.isEditable) {
+  //     // template.unshift(...[{
+  //     //   label: '粘贴',
+  //     //   role: 'paste'
+  //     // }])
+  //   }
+  //   if (selectEnabled) {
+  //     // template.unshift(...[{
+  //     //   label: '剪切',
+  //     //   role: 'cut',
+  //     //   visible: () => !selectEnabled
+  //     // }])
+  //     template.unshift(...[{
+  //       label: '复制',
+  //       role: 'copy',
+  //       visible: () => !selectEnabled
+  //     }])
+  //   }
+  //   if (template.length) {
+  //     const RightMenu = Menu.buildFromTemplate(template)
+  //     RightMenu.popup()
+  //   }
+  // })
 }
 
 // 菜单设置
@@ -120,4 +148,21 @@ const createMenu = () => {
   const template = []
   const appMenu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(appMenu)
+}
+
+// 详情区域右键菜单
+export const showContextmenu = (selection) => {
+  const selectEnabled = !!selection.trim().length
+  const template = []
+  if (selectEnabled) {
+    template.unshift(...[{
+      label: '复制',
+      role: 'copy',
+      visible: () => !selectEnabled
+    }])
+  }
+  if (template.length) {
+    const RightMenu = Menu.buildFromTemplate(template)
+    RightMenu.popup()
+  }
 }
