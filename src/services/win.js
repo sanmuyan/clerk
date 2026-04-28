@@ -119,8 +119,11 @@ const createWindowState = () => {
 const createMenu = () => {
   // 定义托盘
   const icon = nativeImage.createFromPath(config.logo_file)
+  if (process.platform === 'darwin') {
+    icon.setTemplateImage(true)
+  }
   const tray = new Tray(icon)
-  const contextMenu = Menu.buildFromTemplate([
+  const menuList = [
     {
       label: '    设置    ',
       type: 'normal',
@@ -135,12 +138,24 @@ const createMenu = () => {
         handleExit()
       }
     }
-  ])
-  tray.setContextMenu(contextMenu)
+  ]
+  const contextMenu = Menu.buildFromTemplate(menuList)
 
-  tray.on('click', () => {
-    handleWinDisplay()
-  })
+  if (process.platform === 'darwin') {
+    tray.on('click', (event) => {
+      handleWinDisplay()
+    })
+
+    tray.on('right-click', () => {
+      tray.popUpContextMenu(contextMenu)
+    })
+  } else {
+    tray.setContextMenu(contextMenu)
+
+    tray.on('click', () => {
+      handleWinDisplay()
+    })
+  }
   tray.setToolTip('Clerk')
 
   // 设置菜单

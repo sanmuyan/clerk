@@ -47,6 +47,7 @@ export let config = {}
 
 export const initConfig = () => {
   try {
+    const logoFile = resourcesPath + (process.platform === 'darwin' ? '/icon.png' : '/logo.png')
     config = {
       user_home: userHome,
       app_path: appPath,
@@ -89,7 +90,7 @@ export const initConfig = () => {
         reset_win_size: false,
         clipboard_clear_time: 0
       },
-      logo_file: resourcesPath + '/logo.png'
+      logo_file: logoFile
     }
     try {
       config.window = JSON.parse(fs.readFileSync(config.window_config_file, 'utf8'))

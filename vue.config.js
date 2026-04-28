@@ -23,6 +23,14 @@ module.exports = defineConfig({
               to: './WinTools'
             }
           ]
+        },
+        mac: {
+          icon: './resources/logo.png',
+          appId: 'com.sanmuyan.clerk',
+          artifactName: 'ClerkSetup.zip',
+          target: [
+            'zip'
+          ]
         }
       }
     }

@@ -90,7 +90,7 @@ export const watchImage = async () => {
   clearPrevious(type)
 }
 
-export const watchFile = () => {
+export const watchFile = async () => {
   const type = TYPE_MAP.file
   if (winToolsReady) {
     winToolsClient.GetFileDropList({}, async (err, res) => {
