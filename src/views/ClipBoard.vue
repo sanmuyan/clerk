@@ -101,6 +101,7 @@ const nowCount = ref(0)
 const mouseIsTable = ref(false)
 const isMouseInContent = ref(false)
 const isEnterControl = ref(false)
+const isEnterMeta = ref(false)
 const config = ref({})
 const typeSelect = ref('text')
 const showAppSet = ref(false)
@@ -230,7 +231,14 @@ const handleDelete = (row) => {
 }
 
 // 处理拷贝
+const latestCopyRow = {
+  id: 0
+}
 const handleCopy = (row) => {
+  if (latestCopyRow.id === row.id) {
+    return
+  }
+  latestCopyRow.id = row.id
   ipcRenderer.send('message-from-renderer', 'write', {
     content: row.content,
     type: row.type
@@ -432,12 +440,27 @@ const handleControl = (event) => {
   event.ctrlKey ? isEnterControl.value = true : isEnterControl.value = false
 }
 
+// 处理 meta 键
+const handleMeta = (event) => {
+  event.metaKey ? isEnterMeta.value = true : isEnterMeta.value = false
+}
+
 // 处理 ctrl+c 键
 const handleControlWithC = () => {
   if (isMouseInContent.value) {
     return
   }
   if (isEnterControl.value) {
+    handleCopy(nowRowData.value)
+  }
+}
+
+// 处理 mete+c 键
+const handleMetaWithC = () => {
+  if (isMouseInContent.value) {
+    return
+  }
+  if (isEnterMeta.value) {
     handleCopy(nowRowData.value)
   }
 }
@@ -490,6 +513,13 @@ watch(() => typeSelect.value,
 // 键盘按下事件
 const handleKeyup = (event) => {
   logger.debug(`key up event: ${event.key}`)
+  if (process.platform === 'darwin') {
+    switch (event.key) {
+      case 'Meta':
+        handleMeta(event)
+        break
+    }
+  }
   switch (event.key) {
     case 'c':
       handleControlWithC()
@@ -524,6 +554,15 @@ const handleKeyup = (event) => {
 
 const handleKeydown = (event) => {
   logger.debug(`key down event: ${event.key}`)
+  if (process.platform === 'darwin') {
+    switch (event.key) {
+      case 'Meta':
+        handleMeta(event)
+        break
+      case 'c':
+        handleMetaWithC(event)
+    }
+  }
   switch (event.key) {
     case 'Control':
       handleControl(event)

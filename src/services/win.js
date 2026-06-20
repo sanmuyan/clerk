@@ -160,7 +160,19 @@ const createMenu = () => {
 
   // 设置菜单
   win.setSkipTaskbar(true)
-  const template = []
+  const template = process.platform === 'darwin'
+    ? [
+        {
+          label: 'Edit',
+          submenu: [
+            {
+              label: '复制',
+              role: 'copy'
+            }
+          ]
+        }
+      ]
+    : []
   const appMenu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(appMenu)
 }
