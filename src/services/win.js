@@ -87,32 +87,45 @@ const createWindowState = () => {
   })
 
   // 右键菜单
-  // win.webContents.on('context-menu', (e, params) => {
-  //   const selectEnabled = !!params.selectionText.trim().length
-  //   const template = []
-  //   if (params.isEditable) {
-  //     // template.unshift(...[{
-  //     //   label: '粘贴',
-  //     //   role: 'paste'
-  //     // }])
-  //   }
-  //   if (selectEnabled) {
-  //     // template.unshift(...[{
-  //     //   label: '剪切',
-  //     //   role: 'cut',
-  //     //   visible: () => !selectEnabled
-  //     // }])
-  //     template.unshift(...[{
-  //       label: '复制',
-  //       role: 'copy',
-  //       visible: () => !selectEnabled
-  //     }])
-  //   }
-  //   if (template.length) {
-  //     const RightMenu = Menu.buildFromTemplate(template)
-  //     RightMenu.popup()
-  //   }
-  // })
+  win.webContents.on('context-menu', (e, params) => {
+    const selectEnabled = !!params.selectionText.trim().length
+    const selectAllEnabled = params.editFlags.canSelectAll
+    const template = []
+    if (params.isEditable) {
+      if (selectEnabled) {
+        template.push({
+          label: '剪切',
+          role: 'cut'
+        })
+        template.push({
+          label: '复制',
+          role: 'copy'
+        })
+      }
+      template.push({
+        label: '粘贴',
+        role: 'paste'
+      })
+      if (selectAllEnabled) {
+        template.push({
+          type: 'separator'
+        })
+        template.push({
+          label: '全选',
+          role: 'selectAll'
+        })
+      }
+    } else if (selectEnabled) {
+      template.push({
+        label: '复制',
+        role: 'copy'
+      })
+    }
+    if (template.length) {
+      const RightMenu = Menu.buildFromTemplate(template)
+      RightMenu.popup()
+    }
+  })
 }
 
 // 菜单设置
@@ -168,6 +181,10 @@ const createMenu = () => {
             {
               label: '复制',
               role: 'copy'
+            },
+            {
+              label: '粘贴',
+              role: 'paste'
             }
           ]
         }

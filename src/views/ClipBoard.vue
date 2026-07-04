@@ -9,6 +9,7 @@
       <el-input
         v-model="inputQuery"
         placeholder="搜索"
+        clearable
         @input="handleInputChange()"
         @blur="handleInputBlur()"
         @focus="handleInputFocus()"
