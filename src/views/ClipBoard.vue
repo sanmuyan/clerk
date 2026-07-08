@@ -232,14 +232,7 @@ const handleDelete = (row) => {
 }
 
 // 处理拷贝
-const latestCopyRow = {
-  id: 0
-}
 const handleCopy = (row) => {
-  if (latestCopyRow.id === row.id) {
-    return
-  }
-  latestCopyRow.id = row.id
   ipcRenderer.send('message-from-renderer', 'write', {
     content: row.content,
     type: row.type
